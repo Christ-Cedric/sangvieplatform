@@ -1,0 +1,19 @@
+{
+  "name": "blood-donation-plateform",
+  "version": "1.0.0",
+  "description": "blood-donation-plateform",
+  "license": "ISC",
+  "author": "Groupe19",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend-web && npm install",
+    "frontend:build": "cd frontend-web && npm run build",
+    "backend:start": "cd backend && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.2.4"
+  }
+}

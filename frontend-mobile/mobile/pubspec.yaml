@@ -1,0 +1,57 @@
+name: sangvie
+description: "Converti de Web vers Flutter - Le réseau solidaire de don de sang"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # Navigation
+  go_router: ^17.1.0
+  
+  # UI & Icons
+  lucide_icons: any
+  flutter_animate: ^4.5.0
+  google_fonts: ^6.2.1
+  http: ^1.2.1
+  
+  # Utilities
+  intl: ^0.20.2
+  shared_preferences: ^2.2.2
+  
+  # Maps & Location
+  google_maps_flutter: ^2.5.3
+  geolocator: ^14.0.2
+  url_launcher: ^6.3.2
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  
+flutter:
+  uses-material-design: true
+
+  # Assets section
+  assets:
+    - assets/images/
+    - assets/images/aman-chaturvedi-0ZZo5o00o80-unsplash.jpg
+    - assets/images/logo.png
+

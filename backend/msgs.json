@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "69b4367ecb0c74324dcaad2c",
+    "senderId": "69b4367ecb0c74324dcaad2a",
+    "senderType": "User",
+    "receiverId": "69b4367ecb0c74324dcaad2b",
+    "receiverType": "Hospital",
+    "content": "hello",
+    "isRead": false,
+    "createdAt": "2026-03-13T16:08:30.346Z",
+    "updatedAt": "2026-03-13T16:08:30.346Z",
+    "__v": 0
+  }
+]
