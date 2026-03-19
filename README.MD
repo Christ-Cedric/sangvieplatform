@@ -540,4 +540,6 @@ Ce projet est développé dans le cadre d'une initiative de santé publique pour
 *README généré le 12 Mars 2026 — SangVie Platform v1.0*
 "# Blood-PlateForm" 
 #   s a n g v i e p l a t f o r m  
+ #   s a n g v i e p l a t f o r m  
+ #   s a n g v i e p l a t f o r m  
  
