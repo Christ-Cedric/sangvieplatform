@@ -379,6 +379,7 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
     { icon: LayoutDashboard, labelKey: "nav.hospital.dashboard", path: "/hospital/dashboard" },
@@ -389,13 +390,12 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
     { icon: Settings, labelKey: "nav.hospital.profile", path: "/hospital/profile" },
   ];
 
-  return (
-    <div className="min-h-screen bg-[#F7F7F8] flex flex-col lg:flex-row max-w-[1440px] mx-auto">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[#EBEBEB] h-screen sticky top-0">
+  const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
+    <>
+      <div className="flex flex-col h-full bg-white">
         {/* Logo */}
         <div className="px-6 pt-6 pb-2">
-          <Link to="/hospital/dashboard" className="flex items-center gap-2.5">
+          <Link to="/hospital/dashboard" className="flex items-center gap-2.5" onClick={onLinkClick}>
             <div className="bg-[#CC0000] p-1.5 rounded-lg shadow-sm">
               <Droplet className="text-white w-5 h-5 fill-white" />
             </div>
@@ -422,7 +422,9 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
             <ShieldCheck className="w-3 h-3" />
             {t("hospital.verified_badge")}
           </span>
-          <HospitalNotifications />
+          <div className="lg:block">
+            <HospitalNotifications />
+          </div>
         </div>
 
         {/* Nav */}
@@ -433,6 +435,7 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={onLinkClick}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive
                   ? "bg-[#CC0000] text-white shadow-[0_4px_12px_rgba(204,0,0,0.25)]"
                   : "text-[#555555] hover:bg-[#F7F7F8] hover:text-[#111111]"
@@ -469,22 +472,68 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
           {/* Logout button */}
           <LogoutButton />
         </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#F7F7F8] flex flex-col lg:flex-row max-w-[1440px] mx-auto relative overflow-x-hidden">
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 z-[100] lg:hidden backdrop-blur-sm"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-[260px] bg-white z-[101] flex flex-col lg:hidden border-r border-[#EBEBEB]"
+            >
+              <div className="flex justify-end p-4">
+                <button onClick={() => setIsSidebarOpen(false)} className="text-[#666666] p-1 bg-[#F5F5F7] rounded-xl hover:bg-[#EEEEEE] transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <SidebarContent onLinkClick={() => setIsSidebarOpen(false)} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex flex-col w-[240px] bg-white border-r border-[#EBEBEB] h-screen sticky top-0">
+        <SidebarContent />
       </aside>
 
       {/* Main */}
       <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
         <header className="lg:hidden flex items-center justify-between px-5 py-3.5 bg-white border-b border-[#EBEBEB] sticky top-0 z-50 shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
-          <Link to="/hospital/dashboard" className="flex items-center gap-2">
-            <div className="bg-[#CC0000] p-1 rounded-lg">
-              <Droplet className="text-white w-4 h-4 fill-white" />
-            </div>
-            <span
-              className="text-lg font-bold text-[#0A0A0A]"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 rounded-xl bg-[#F5F5F7] text-[#444444] hover:bg-[#EEEEEE] transition-colors"
             >
-              SangVie Pro
-            </span>
-          </Link>
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link to="/hospital/dashboard" className="flex items-center gap-2">
+              <div className="bg-[#CC0000] p-1 rounded-lg">
+                <Droplet className="text-white w-4 h-4 fill-white" />
+              </div>
+              <span
+                className="text-lg font-bold text-[#0A0A0A]"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                SangVie Pro
+              </span>
+            </Link>
+          </div>
 
           <HospitalNotifications />
         </header>
