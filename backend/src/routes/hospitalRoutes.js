@@ -19,8 +19,21 @@ const {
     getRequestResponses,
     getNotifications,
     markNotificationsAsRead,
-    updateRequestStatus
+    updateRequestStatus,
+    getAllHospitalsPublic
 } = require('../controllers/hospitalController');
+
+/**
+ * @swagger
+ * /api/hospitals:
+ *   get:
+ *     summary: Récupérer la liste des hôpitaux publics
+ *     tags: [Hospital]
+ *     responses:
+ *       200:
+ *         description: Liste des hôpitaux
+ */
+router.get('/', getAllHospitalsPublic);
 
 /**
  * @swagger

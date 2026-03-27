@@ -147,15 +147,15 @@ class SangVieButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: 200.ms,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.xxl),
+          borderRadius: BorderRadius.circular(12),
           gradient: (backgroundColor == null && !isSecondary && !isOutlined) ? AppColors.primaryGradient : null,
           color: (backgroundColor != null || isSecondary || isOutlined) ? (isOutlined ? Colors.transparent : bg) : null,
           border: isOutlined ? Border.all(color: backgroundColor ?? AppColors.primary, width: 2) : null,
           boxShadow: (isSecondary || isOutlined) ? [] : [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.25),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: AppColors.primary.withOpacity(0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -239,9 +239,9 @@ class SangVieCard extends StatelessWidget {
         border: hasBorder ? Border.all(color: AppColors.border.withOpacity(0.6), width: 1.2) : null,
         boxShadow: boxShadow ?? [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -466,51 +466,59 @@ class SangVieInput extends StatelessWidget {
             ),
           ),
         ],
-        TextField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          onSubmitted: onSubmitted,
-          maxLines: maxLines,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.foreground,
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(
-              color: AppColors.mutedForeground,
-              fontWeight: FontWeight.w500,
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            onSubmitted: onSubmitted,
+            maxLines: maxLines,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.foreground,
             ),
-            filled: true,
-            fillColor: AppColors.inputBackground,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: BorderSide.none,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: AppColors.mutedForeground,
+                fontWeight: FontWeight.w500,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.destructive, width: 1),
+              ),
+              contentPadding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              prefixIcon: prefixIcon,
+              suffixIcon: suffixIcon,
+              errorText: errorText,
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: const BorderSide(color: AppColors.destructive, width: 1),
-            ),
-            contentPadding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            prefixIcon: prefixIcon != null 
-              ? Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: prefixIcon,
-                ) 
-              : null,
-            suffixIcon: suffixIcon,
-            errorText: errorText,
           ),
         ),
       ],
@@ -535,6 +543,7 @@ class SangVieBottomNav extends StatelessWidget {
   final String currentPath;
   final Function(String) onTabTap;
   final Widget? actionButton;
+  final Color? activeColor;
 
   const SangVieBottomNav({
     super.key,
@@ -542,40 +551,64 @@ class SangVieBottomNav extends StatelessWidget {
     required this.currentPath,
     required this.onTabTap,
     this.actionButton,
+    this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ...items.sublist(0, (items.length / 2).floor()).map((item) => _buildNavItem(item)),
-              if (actionButton != null) actionButton!,
-              ...items.sublist((items.length / 2).floor()).map((item) => _buildNavItem(item)),
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        // The bar itself
+        Container(
+          height: 85,
+          margin: const EdgeInsets.only(
+              top: 15), // Create space for the FAB overlap
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
             ],
           ),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ...items
+                    .sublist(0, (items.length / 2).floor())
+                    .map((item) => _buildNavItem(item)),
+                if (actionButton != null)
+                  const SizedBox(width: 60), // Space for action button
+                ...items
+                    .sublist((items.length / 2).floor())
+                    .map((item) => _buildNavItem(item)),
+              ],
+            ),
+          ),
         ),
-      ),
+        // The Action Button (Floating & Diamond)
+        if (actionButton != null)
+          Positioned(
+            top: -15, // Floating overlap
+            child: actionButton!,
+          ),
+      ],
     );
   }
 
   Widget _buildNavItem(SangVieNavItem item) {
     final isActive = currentPath.startsWith(item.path);
+    final color = isActive
+        ? (activeColor ?? AppColors.primary)
+        : const Color(0xFF94A3B8);
+
     return Expanded(
       child: GestureDetector(
         onTap: () => onTabTap(item.path),
@@ -583,25 +616,18 @@ class SangVieBottomNav extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedScale(
-              duration: 250.ms,
-              scale: isActive ? 1.15 : 1.0,
-              curve: Curves.easeOutBack,
-              child: Icon(
-                item.icon,
-                color: isActive ? AppColors.primary : AppColors.mutedForeground.withOpacity(0.5),
-                size: 24,
-              ),
+            Icon(
+              item.icon,
+              color: color,
+              size: 24,
             ),
-
-            const SizedBox(height: 2),
-            AnimatedContainer(
-              duration: 300.ms,
-              width: isActive ? 4 : 0,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(2),
+            const SizedBox(height: 4),
+            Text(
+              item.label,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ],
@@ -619,6 +645,8 @@ class SangVieDrawer extends StatelessWidget {
   final String currentPath;
   final VoidCallback onLogout;
   final Function(String) onTabTap;
+  final Gradient? gradient;
+  final Color? activeColor;
 
   const SangVieDrawer({
     super.key,
@@ -629,6 +657,8 @@ class SangVieDrawer extends StatelessWidget {
     required this.currentPath,
     required this.onLogout,
     required this.onTabTap,
+    this.gradient,
+    this.activeColor,
   });
 
   @override
@@ -636,53 +666,72 @@ class SangVieDrawer extends StatelessWidget {
     return Drawer(
       backgroundColor: Colors.white,
       width: MediaQuery.of(context).size.width * 0.85,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(AppRadius.xxl)),
-      ),
       child: Column(
         children: [
-          Stack(
-            children: [
-              ClipPath(
-                clipper: HeaderWaveClipper(),
-                child: Container(
-                  height: 240,
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                  ),
-                ),
+          // Header
+          InkWell(
+            onTap: () {
+              Navigator.pop(context);
+              onTabTap('/hospital/profile');
+            },
+            child: Container(
+              padding: const EdgeInsets.only(
+                  top: 60, left: 20, right: 20, bottom: 30),
+              decoration: BoxDecoration(
+                gradient: gradient ?? AppColors.primaryGradient,
               ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 30),
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircleAvatar(
+                      radius: 35,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: userImageUrl != null
+                          ? NetworkImage(userImageUrl!)
+                          : null,
+                      child: userImageUrl == null
+                          ? Icon(LucideIcons.user,
+                              size: 35, color: activeColor ?? AppColors.primary)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
-                            const Icon(LucideIcons.mail, color: Colors.white, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              userSubtitle,
-                              style: const TextStyle(
+                            Icon(Icons.star,
+                                color: Colors.yellow.shade600, size: 16),
+                            Icon(Icons.star,
+                                color: Colors.yellow.shade600, size: 16),
+                            Icon(Icons.star,
+                                color: Colors.yellow.shade600, size: 16),
+                            Icon(Icons.star,
+                                color: Colors.yellow.shade600, size: 16),
+                            const Icon(Icons.star_outline,
+                                color: Colors.white70, size: 16),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "4.8",
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -690,23 +739,27 @@ class SangVieDrawer extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  const Icon(LucideIcons.chevronRight,
+                      color: Colors.white70, size: 24),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          // Menu Items
           Expanded(
             child: ListView(
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.symmetric(vertical: 8),
               children: items.map((item) {
                 final isActive = currentPath.startsWith(item.path);
                 return SangVieDrawerItem(
                   icon: item.icon,
                   label: item.label,
                   isActive: isActive,
+                  activeColor: activeColor,
                   onTap: () {
                     Navigator.pop(context);
                     onTabTap(item.path);
@@ -715,18 +768,35 @@ class SangVieDrawer extends StatelessWidget {
               }).toList(),
             ),
           ),
+          const Divider(height: 1),
+          // Logout
           Padding(
-            padding: const EdgeInsets.all(24),
-            child: SangVieButton(
-              label: 'Déconnexion',
-              onPressed: onLogout,
-              isOutlined: true,
-              isFullWidth: true,
-              height: 50,
-              icon: const Icon(Icons.logout, color: AppColors.primary, size: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: InkWell(
+              onTap: onLogout,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.logOut,
+                        color: activeColor ?? AppColors.primary, size: 22),
+                    const SizedBox(width: 20),
+                    Text(
+                      'Déconnexion',
+                      style: TextStyle(
+                        color: activeColor ?? AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -738,6 +808,7 @@ class SangVieDrawerItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final Color? activeColor;
 
   const SangVieDrawerItem({
     super.key,
@@ -745,42 +816,45 @@ class SangVieDrawerItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primary.withOpacity(0.05) : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: isActive
+            ? (activeColor ?? AppColors.primary).withOpacity(0.08)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: isActive ? Colors.white : AppColors.primary,
-                  size: 20,
-                ),
+              Icon(
+                icon,
+                color: isActive
+                    ? (activeColor ?? AppColors.primary)
+                    : const Color(0xFF718096),
+                size: 24,
               ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.primary, // Red text as in image
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
+              const SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isActive
+                        ? (activeColor ?? AppColors.primary)
+                        : const Color(0xFF2D3748),
+                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 16,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
             ],

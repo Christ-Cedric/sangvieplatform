@@ -1,5 +1,6 @@
 const Hospital = require('../models/Hospital');
 const User = require('../models/User');
+const Donation = require('../models/Donation');
 
 // @desc    Valider un compte d'hôpital
 // @route   PUT /api/admin/verify-hospital/:id
@@ -11,6 +12,28 @@ exports.verifyHospital = async (req, res) => {
         hospital.verified = true;
         await hospital.save();
         res.json({ message: 'Compte hôpital validé avec succès' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Suspendre un compte (Utilisateur ou Hôpital)
+// @route   PUT /api/admin/suspend/:id?type=User|Hospital
+exports.suspendAccount = async (req, res) => {
+    try {
+        const { type } = req.query;
+        let model = type === 'Hospital' ? Hospital : User;
+
+        const account = await model.findById(req.params.id);
+        if (!account) return res.status(404).json({ message: 'Compte non trouvé' });
+
+        account.status = account.status === 'suspended' ? 'active' : 'suspended';
+        await account.save();
+
+        res.json({ 
+            message: `Compte ${account.status === 'suspended' ? 'suspendu' : 'activé'} avec succès`,
+            status: account.status 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -87,8 +110,6 @@ exports.getAllUsers = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-const Donation = require('../models/Donation');
 
 // @desc    Obtenir les rapports et stats nationales
 // @route   GET /api/admin/reports

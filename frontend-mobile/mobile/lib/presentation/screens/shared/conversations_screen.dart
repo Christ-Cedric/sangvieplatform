@@ -34,15 +34,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Mes Discussions'),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.refreshCw, size: 20),
-            onPressed: _refresh,
-          ),
-        ],
-      ),
       body: FutureBuilder<List<ConversationModel>>(
         future: _conversationsFuture,
         builder: (context, snapshot) {
@@ -67,7 +58,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     MaterialPageRoute(
                       builder: (_) => ChatScreen(
                         otherId: c.otherId,
-                        otherName: c.otherType == 'Hospital' ? 'Hôpital' : 'Donneur',
+                        otherName:
+                            c.otherType == 'Hospital' ? 'Hôpital' : 'Donneur',
                         otherType: c.otherType,
                       ),
                     ),
@@ -80,7 +72,9 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     CircleAvatar(
                       backgroundColor: AppColors.primarySoft,
                       child: Icon(
-                        c.otherType == 'Hospital' ? LucideIcons.building2 : LucideIcons.user,
+                        c.otherType == 'Hospital'
+                            ? LucideIcons.building2
+                            : LucideIcons.user,
                         color: AppColors.primary,
                         size: 20,
                       ),
@@ -94,12 +88,17 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                c.otherType == 'Hospital' ? 'Hôpital' : 'Donneur',
-                                style: const TextStyle(fontWeight: FontWeight.w800),
+                                c.otherType == 'Hospital'
+                                    ? 'Hôpital'
+                                    : 'Donneur',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800),
                               ),
                               Text(
                                 DateFormat('HH:mm').format(c.date),
-                                style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground),
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.mutedForeground),
                               ),
                             ],
                           ),
@@ -109,8 +108,12 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: c.isRead ? AppColors.mutedForeground : AppColors.foreground,
-                              fontWeight: c.isRead ? FontWeight.normal : FontWeight.w700,
+                              color: c.isRead
+                                  ? AppColors.mutedForeground
+                                  : AppColors.foreground,
+                              fontWeight: c.isRead
+                                  ? FontWeight.normal
+                                  : FontWeight.w700,
                               fontSize: 13,
                             ),
                           ),
@@ -121,7 +124,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       Container(
                         width: 10,
                         height: 10,
-                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        decoration: const BoxDecoration(
+                            color: AppColors.primary, shape: BoxShape.circle),
                       ),
                   ],
                 ),
@@ -140,8 +144,11 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         children: [
           Icon(LucideIcons.messageSquare, size: 64, color: AppColors.border),
           const SizedBox(height: AppSpacing.md),
-          const Text('Aucune discussion', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.secondary)),
-          const Text('Répondez à une demande pour discuter.', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+          const Text('Aucune discussion',
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, color: AppColors.secondary)),
+          const Text('Répondez à une demande pour discuter.',
+              style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
         ],
       ),
     );

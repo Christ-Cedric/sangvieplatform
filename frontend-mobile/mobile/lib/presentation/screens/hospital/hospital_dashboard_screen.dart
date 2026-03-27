@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:sangvie/core/constants/api_constants.dart';
-import 'package:sangvie/core/services/api_service.dart';
 import 'package:sangvie/core/services/auth_service.dart';
+import 'package:sangvie/core/providers/hospital_provider.dart';
 import 'package:sangvie/core/theme/app_colors.dart';
 import 'package:sangvie/data/models/blood_request_model.dart';
-import 'package:sangvie/data/repositories/blood_request_repository.dart';
 import 'package:sangvie/presentation/widgets/hospital_layout.dart';
 import 'package:sangvie/presentation/widgets/ui_components.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -21,46 +19,22 @@ class HospitalDashboardScreen extends StatefulWidget {
 }
 
 class _HospitalDashboardScreenState extends State<HospitalDashboardScreen> {
-  final BloodRequestRepository _repository = BloodRequestRepository();
-  late Future<Map<String, dynamic>> _dashboardFuture;
-
   @override
   void initState() {
     super.initState();
-    _dashboardFuture = _fetchDashboard();
-  }
-
-  Future<Map<String, dynamic>> _fetchDashboard() async {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    final hospitalId = user?.id ?? '';
-
-    final requestsData = await _repository.getHospitalRequests(hospitalId);
-    final statsData = await ApiService.get(ApiConstants.hospitalStats);
-
-    final activeCount = requestsData.where((r) => r.status == 'active').length;
-    final donsCount = statsData?['confirmedDonations'] ?? 0;
-    final donneursTotal = statsData?['uniqueDonors'] ?? 0;
-    
-    // Taux de réponse : Dons / Demandes (%)
-    String tauxReponse = '–';
-    if (requestsData.isNotEmpty) {
-      final rate = (donsCount / requestsData.length) * 100;
-      tauxReponse = '${rate.toStringAsFixed(0)}%';
-    }
-
-    return {
-      'requests': requestsData,
-      'activeCount': activeCount,
-      'donsCount': donsCount,
-      'tauxReponse': tauxReponse,
-      'donneursTotal': donneursTotal,
-    };
-  }
-
-  void _refresh() {
-    setState(() {
-      _dashboardFuture = _fetchDashboard();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.read<AuthService>().currentUser;
+      if (user != null) {
+        context.read<HospitalProvider>().fetchDashboardData(user.id);
+      }
     });
+  }
+
+  Future<void> _refresh() async {
+    final user = context.read<AuthService>().currentUser;
+    if (user != null) {
+      await context.read<HospitalProvider>().fetchDashboardData(user.id);
+    }
   }
 
   @override
@@ -70,37 +44,51 @@ class _HospitalDashboardScreenState extends State<HospitalDashboardScreen> {
 
     return HospitalLayout(
       child: RefreshIndicator(
-        onRefresh: () async => _refresh(),
+        onRefresh: _refresh,
         color: AppColors.primary,
         displacement: 20,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 120),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               // Header
-              _buildHeader(hospName),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              FutureBuilder<Map<String, dynamic>>(
-                future: _dashboardFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return _buildLoadingState();
+              _buildPremiumHeader(context, hospName),
+              Consumer<HospitalProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading && provider.myRequests.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 100),
+                      child: _buildLoadingState(),
+                    );
                   }
 
-                  final data = snapshot.data ?? {};
-                  final requests = (data['requests'] as List<BloodRequest>?) ?? [];
+                  final stats = provider.stats;
+                  final requests = provider.myRequests;
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStatsGrid(data),
-                      const SizedBox(height: AppSpacing.xl + 8),
-                      _buildRecentRequestsSection(requests),
-                    ],
+                  final activeCount =
+                      requests.where((r) => r.status == 'active').length;
+                  final donsCount = stats['confirmedDonations'] ?? 0;
+                  final donneursTotal = stats['uniqueDonors'] ?? 0;
+                  final responseRate = stats['responseRate'] ?? 0;
+
+                  final dashboardData = {
+                    'activeCount': activeCount,
+                    'donsCount': donsCount,
+                    'tauxReponse': '$responseRate%',
+                    'donneursTotal': donneursTotal,
+                  };
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatsGrid(dashboardData),
+                        const SizedBox(height: AppSpacing.xxl),
+                        _buildRecentRequestsSection(requests),
+                        const SizedBox(height: 100), // Spacing for bottom nav
+                      ],
+                    ),
                   );
                 },
               ),
@@ -111,54 +99,130 @@ class _HospitalDashboardScreenState extends State<HospitalDashboardScreen> {
     );
   }
 
-  Widget _buildHeader(String hospName) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SangVieTypography.h1('Tableau de bord'),
-        const SizedBox(height: 4),
-        Text(
-          'Bienvenue, $hospName',
-          style: const TextStyle(color: AppColors.secondary, fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ],
-    ).animate().fadeIn().slideX(begin: -0.1, end: 0);
+  Widget _buildPremiumHeader(BuildContext context, String hospName) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, 85, AppSpacing.lg, AppSpacing.xxl), // Increased top padding for AppBar
+      decoration: const BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Tableau de bord'.toUpperCase(),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            hospName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(LucideIcons.shieldCheck,
+                    color: AppColors.primary, size: 14),
+                const SizedBox(width: 6),
+                const Text(
+                  'Établissement Certifié',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStatsGrid(Map<String, dynamic> data) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: AppSpacing.md,
-      mainAxisSpacing: AppSpacing.md,
-      childAspectRatio: 1.25,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildStatCard('Demandes actives', '${data['activeCount'] ?? 0}', LucideIcons.activity, AppColors.warningOrange),
-        _buildStatCard('Dons du mois', '${data['donsCount'] ?? 0}', LucideIcons.droplets, AppColors.successGreen),
-        _buildStatCard('Taux de réponse', '${data['tauxReponse'] ?? '–'}', LucideIcons.trendingUp, AppColors.primary),
-        _buildStatCard('Total donneurs', '${data['donneursTotal'] ?? 0}', LucideIcons.users, AppColors.foreground),
+        SangVieTypography.label('Statistiques mensuelles'),
+        const SizedBox(height: AppSpacing.md),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: AppSpacing.md,
+          mainAxisSpacing: AppSpacing.md,
+          childAspectRatio: 1.1,
+          children: [
+            _buildStatCard('Demandes', '${data['activeCount'] ?? 0}',
+                LucideIcons.activity, AppColors.warningOrange),
+            _buildStatCard('Dons Reçus', '${data['donsCount'] ?? 0}',
+                LucideIcons.droplets, AppColors.primary),
+            _buildStatCard('Taux', '${data['tauxReponse'] ?? '–'}',
+                LucideIcons.trendingUp, AppColors.successGreen),
+            _buildStatCard('Donneurs', '${data['donneursTotal'] ?? 0}',
+                LucideIcons.users, const Color(0xFF6366F1)),
+          ],
+        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
       ],
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
+    );
   }
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return SangVieCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(AppRadius.md)),
-            child: Icon(icon, color: color, size: 20),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, letterSpacing: -0.5)),
-              Text(label, style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(value,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 24,
+                        letterSpacing: -1)),
+              ),
+              Text(label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: AppColors.secondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700)),
             ],
           ),
         ],
@@ -172,67 +236,87 @@ class _HospitalDashboardScreenState extends State<HospitalDashboardScreen> {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            SangVieTypography.label('Dernières demandes'),
-            GestureDetector(
-              onTap: () => context.go('/hospital/requests'),
-              child: const Text(
-                'VOIR TOUT',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
-              ),
+            SangVieTypography.label('Suivi des demandes'),
+            TextButton(
+              onPressed: () => context.go('/hospital/requests'),
+              child: const Text('VOIR TOUT',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primary)),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.xs),
         if (requests.isEmpty)
           _buildEmptyState()
         else
-          ...requests.take(5).map((r) => _buildRequestListItem(r)).toList().animate(interval: 50.ms).fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: requests.length > 3 ? 3 : requests.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) =>
+                _buildRequestListItem(requests[index]),
+          ).animate().fadeIn(delay: 400.ms),
       ],
     );
   }
 
   Widget _buildRequestListItem(BloodRequest r) {
     final isActive = r.status == 'active';
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: SangVieCard(
-        onTap: () => context.go('/hospital/requests'),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(AppRadius.md),
+    return SangVieCard(
+      onTap: () => context.go('/hospital/requests'),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Center(
+              child: Text(
+                r.group,
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18),
               ),
-              child: Center(
-                child: Text(
-                  r.group,
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 16),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${r.quantity} poche(s) demandée(s)',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 16)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(LucideIcons.calendar,
+                        size: 12, color: AppColors.secondary),
+                    const SizedBox(width: 4),
+                    Text(r.date,
+                        style: const TextStyle(
+                            color: AppColors.secondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
+                  ],
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${r.quantity} poche(s)', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                  Text(r.date, style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-            SangVieBadge(
-              label: isActive ? 'En cours' : 'Clôturée',
-              color: isActive ? AppColors.warningOrange : AppColors.successGreen,
-              icon: isActive ? LucideIcons.clock : LucideIcons.checkCircle,
-            ),
-          ],
-        ),
+          ),
+          SangVieBadge(
+            label: isActive ? 'Actif' : 'Clôturé',
+            color: isActive ? AppColors.warningOrange : AppColors.successGreen,
+          ),
+        ],
       ),
     );
   }
@@ -243,7 +327,9 @@ class _HospitalDashboardScreenState extends State<HospitalDashboardScreen> {
       color: AppColors.secondarySoft,
       hasBorder: false,
       child: const Center(
-        child: Text('Aucune demande pour le moment.', style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600)),
+        child: Text('Aucune demande pour le moment.',
+            style: TextStyle(
+                color: AppColors.secondary, fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -252,7 +338,8 @@ class _HospitalDashboardScreenState extends State<HospitalDashboardScreen> {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.xxl),
-        child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+        child:
+            CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
       ),
     );
   }

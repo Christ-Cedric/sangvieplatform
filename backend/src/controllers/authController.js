@@ -19,7 +19,7 @@ exports.registerUser = async (req, res) => {
         const user = await User.create({ nom, prenom, email, motDePasse, telephone, lieuResidence, groupeSanguin });
 
         res.status(201).json({
-            _id: user._id, nom, prenom, email, telephone,
+            _id: user._id, nom, prenom, email, telephone, role: user.role,
             token: generateToken(user._id)
         });
     } catch (error) {
@@ -41,7 +41,7 @@ exports.registerHospital = async (req, res) => {
         });
 
         res.status(201).json({
-            _id: hospital._id, nom, email, contact,
+            _id: hospital._id, nom, email, contact, role: hospital.role,
             token: generateToken(hospital._id)
         });
     } catch (error) {

@@ -36,6 +36,14 @@ async function request<T>(
   const data = await response.json().catch(() => ({ message: "Erreur réseau" }));
 
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem("sangvie_token");
+      localStorage.removeItem("sangvie_user");
+      // On recharge la page pour réinitialiser l'état de l'app si on n'est pas déjà sur login
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
+    }
     const error = new Error(data?.message ?? `Erreur ${response.status}`);
     throw error;
   }

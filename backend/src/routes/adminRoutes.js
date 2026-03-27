@@ -9,7 +9,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
-const { verifyHospital, deleteAccount, getStats, getPendingHospitals, getAllHospitals, getAllUsers, getReports } = require('../controllers/adminController');
+const { verifyHospital, suspendAccount, deleteAccount, getStats, getPendingHospitals, getAllHospitals, getAllUsers, getReports } = require('../controllers/adminController');
 
 /**
  * @swagger
@@ -75,6 +75,7 @@ router.put('/verify-hospital/:id', protect, authorize('admin'), verifyHospital);
  *         description: Compte supprimé
  */
 router.delete('/account/:id', protect, authorize('admin'), deleteAccount);
+router.put('/suspend/:id', protect, authorize('admin'), suspendAccount);
 
 /**
  * @swagger

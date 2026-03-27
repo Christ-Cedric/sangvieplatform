@@ -6,6 +6,7 @@ import 'package:sangvie/core/theme/app_colors.dart';
 import 'package:sangvie/presentation/widgets/hospital_layout.dart';
 import 'package:sangvie/presentation/widgets/ui_components.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 
 class HospitalStatsScreen extends StatefulWidget {
   const HospitalStatsScreen({super.key});
@@ -44,40 +45,51 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
         displacement: 20,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: AppSpacing.xl + 4),
-              
-              FutureBuilder<Map<String, dynamic>>(
-                future: _statsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return _buildLoadingState();
-                  }
-                  
-                  final s = snapshot.data ?? {};
-                  final requests = s['requestsCount'] ?? s['totalRequests'] ?? 0;
-                  final donors = s['donorsCount'] ?? s['totalDonors'] ?? 0;
-                  final bags = s['bagsCount'] ?? s['totalBags'] ?? 0;
-                  final rate = s['rate'] ?? s['tauxReponse'] ?? '0%';
-                  final recent = (s['recentActivity'] as List?) ?? [];
-                  final distribution = (s['distribution'] as List?) ?? _getMockDistribution();
+              _buildPremiumHeader(context),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+                child: FutureBuilder<Map<String, dynamic>>(
+                  future: _statsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 100),
+                        child: _buildLoadingState(),
+                      );
+                    }
 
-                  return Column(
-                    children: [
-                      _buildKPIGrid(requests, donors, bags, rate),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildChartSection(),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildBloodGroupsSection(distribution),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildRecentActivitySection(recent),
-                    ],
-                  );
-                },
+                    if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    final s = snapshot.data!;
+                    final requests = s['totalRequests'] ?? 0;
+                    final donors = s['uniqueDonors'] ?? 0;
+                    final donations = s['confirmedDonations'] ?? 0;
+                    final rate = s['responseRate'] ?? 0;
+                    
+                    final monthlyData = (s['monthlyData'] as List?) ?? [];
+                    final bloodGroupData = (s['bloodGroupData'] as List?) ?? [];
+                    final activityLog = (s['activityLog'] as List?) ?? [];
+
+                    return Column(
+                      children: [
+                        _buildKPIGrid(requests, donors, donations, rate),
+                        const SizedBox(height: AppSpacing.xxl),
+                        _buildChartSection(monthlyData),
+                        const SizedBox(height: AppSpacing.xxl),
+                        _buildBloodGroupsSection(bloodGroupData),
+                        const SizedBox(height: AppSpacing.xxl),
+                        _buildRecentActivitySection(activityLog),
+                        const SizedBox(height: 100),
+                      ],
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -86,36 +98,51 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
     );
   }
 
-  List _getMockDistribution() {
-    return [
-      {'label': 'O+', 'pct': 0.45, 'count': 45},
-      {'label': 'A+', 'pct': 0.30, 'count': 30},
-      {'label': 'B+', 'pct': 0.15, 'count': 15},
-      {'label': 'AB+', 'pct': 0.10, 'count': 10},
-    ];
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SangVieTypography.h1("Statistiques"),
-            const SizedBox(height: 4),
-            const Text(
-              "Analyse des performances",
-              style: TextStyle(color: AppColors.secondary, fontSize: 14, fontWeight: FontWeight.w600),
+  Widget _buildPremiumHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, 85, AppSpacing.lg, AppSpacing.xxl),
+      decoration: const BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Text(
+                'Analytique'.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+              const Spacer(),
+              _buildDateSelector(),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Performances',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1,
             ),
-          ],
-        ),
-        _buildDateSelector(),
-      ],
-    ).animate().fadeIn().slideX(begin: -0.1, end: 0);
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildKPIGrid(var requests, var donors, var bags, var rate) {
+  Widget _buildKPIGrid(var requests, var donors, var donations, var rate) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -124,15 +151,15 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
       crossAxisSpacing: AppSpacing.md,
       childAspectRatio: 1.25,
       children: [
-        _buildKPICard("Demandes", requests.toString(), "+12%", LucideIcons.activity, AppColors.primary),
-        _buildKPICard("Donneurs", donors.toString(), "+5%", LucideIcons.users, Colors.blue),
-        _buildKPICard("Poches", bags.toString(), "+8%", LucideIcons.droplets, AppColors.successGreen),
-        _buildKPICard("Réponse", rate.toString(), "+2%", LucideIcons.trendingUp, AppColors.warningOrange),
+        _buildKPICard("Demandes", requests.toString(), LucideIcons.activity, AppColors.primary),
+        _buildKPICard("Donneurs", donors.toString(), LucideIcons.users, Colors.blue),
+        _buildKPICard("Dons validés", donations.toString(), LucideIcons.droplets, AppColors.successGreen),
+        _buildKPICard("Taux réponse", "$rate%", LucideIcons.trendingUp, AppColors.warningOrange),
       ],
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildKPICard(String label, String value, String change, IconData icon, Color color) {
+  Widget _buildKPICard(String label, String value, IconData icon, Color color) {
     return SangVieCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -144,21 +171,26 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(AppRadius.md)),
+                decoration: BoxDecoration(
+                    color: color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(AppRadius.md)),
                 child: Icon(icon, color: color, size: 20),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.successGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                child: Text(change, style: const TextStyle(color: AppColors.successGreen, fontSize: 10, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-              Text(label, style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5)),
+              Text(label,
+                  style: const TextStyle(
+                      color: AppColors.secondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700)),
             ],
           ),
         ],
@@ -166,34 +198,44 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
     );
   }
 
-  Widget _buildChartSection() {
+  Widget _buildChartSection(List monthlyData) {
+    if (monthlyData.isEmpty) return const SizedBox.shrink();
+
+    // Trouver le max pour mettre à l'échelle les barres
+    int maxDonations = 1;
+    for (var m in monthlyData) {
+      int d = m['donations'] ?? 0;
+      if (d > maxDonations) maxDonations = d;
+    }
+
     return SangVieCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Évolution hebdomadaire", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.5)),
-              const Icon(LucideIcons.moreHorizontal, size: 20, color: AppColors.secondary),
+              Text("Donations mensuelles",
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      letterSpacing: -0.5)),
+              Icon(LucideIcons.barChart,
+                  size: 20, color: AppColors.secondary),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           SizedBox(
             height: 160,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildBar("Lun", 0.4),
-                _buildBar("Mar", 0.7),
-                _buildBar("Mer", 0.5),
-                _buildBar("Jeu", 0.9),
-                _buildBar("Ven", 0.6),
-                _buildBar("Sam", 0.8),
-                _buildBar("Dim", 0.3),
-              ],
+              children: monthlyData.map((m) {
+                double factor = (m['donations'] ?? 0) / maxDonations;
+                if (factor < 0.05 && (m['donations'] ?? 0) > 0) factor = 0.05;
+                return _buildBar(m['month'] ?? '', factor, m['donations'] ?? 0);
+              }).toList(),
             ),
           ),
         ],
@@ -201,30 +243,40 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildBar(String day, double heightFactor) {
+  Widget _buildBar(String month, double heightFactor, int value) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Container(
-          width: 24,
-          height: 120 * heightFactor,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [
-                AppColors.primary,
-                AppColors.primary.withOpacity(0.7),
+        Tooltip(
+          message: "$value dons",
+          child: Container(
+            width: 28,
+            height: 120 * heightFactor,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: [
+                BoxShadow(
+                    color: AppColors.primary.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2))
               ],
             ),
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [
-              BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
-            ],
           ),
         ),
         const SizedBox(height: 10),
-        Text(day, style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(month,
+            style: const TextStyle(
+                color: AppColors.secondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700)),
       ],
     );
   }
@@ -235,35 +287,56 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Répartition par groupe", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.5)),
+          const Text("Répartition par groupe",
+              style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: -0.5)),
           const SizedBox(height: 24),
-          ...distribution.map((g) => Padding(
+          if (distribution.isEmpty)
+            const Center(child: Text("Aucune donnée de groupe.", style: TextStyle(color: AppColors.secondary)))
+          else
+            ...distribution.map((g) {
+              final group = g['group']?.toString() ?? 'N/A';
+              final count = g['count'] ?? 0;
+              final pct = (g['percentage'] ?? 0) / 100.0;
+              
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 18),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(g['label']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                        Text(group,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800, fontSize: 14)),
                         Text(
-                          "${g['count']} sacs (${(( (g['pct'] ?? 0.0) as double) * 100).toInt()}%)", 
-                          style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w600)
-                        ),
+                            "$count poches (${(pct * 100).toInt()}%)",
+                            style: const TextStyle(
+                                color: AppColors.secondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: (g['pct'] ?? 0.0) as double,
+                        value: pct,
                         backgroundColor: AppColors.inputBackground,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary),
                         minHeight: 8,
                       ),
                     ),
                   ],
                 ),
-              )).toList().animate(interval: 50.ms).fadeIn(delay: 600.ms).slideY(begin: 0.1, end: 0),
+              );
+            }).toList()
+              .animate(interval: 50.ms)
+              .fadeIn(delay: 600.ms)
+              .slideY(begin: 0.1, end: 0),
         ],
       ),
     );
@@ -275,33 +348,93 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Activité récente", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.5)),
+          const Text("Activité récente",
+              style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: -0.5)),
           const SizedBox(height: 12),
           if (activities.isEmpty)
-            const Padding(padding: EdgeInsets.all( AppSpacing.lg), child: Center(child: Text("Aucune activité récente.", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600))))
+            const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: Center(
+                    child: Text("Aucune activité récente.",
+                        style: TextStyle(
+                            color: AppColors.secondary,
+                            fontWeight: FontWeight.w600))))
           else
-            ...activities.map((a) => Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5))),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(a['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                            const SizedBox(height: 2),
-                            Text(a['detail']?.toString() ?? '', style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w500)),
-                          ],
-                        ),
+            ...activities.map((a) {
+              DateTime? date;
+              try {
+                date = DateTime.parse(a['time']);
+              } catch (_) {}
+              
+              final timeStr = date != null ? DateFormat('dd/MM HH:mm').format(date) : '';
+
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: const BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(
+                            color: AppColors.border, width: 0.5))),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(a['action']?.toString() ?? '',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14)),
+                          const SizedBox(height: 2),
+                          Text(a['detail']?.toString() ?? '',
+                              style: const TextStyle(
+                                  color: AppColors.secondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500)),
+                        ],
                       ),
-                      Text(a['time']?.toString() ?? '', style: const TextStyle(color: AppColors.mutedForeground, fontSize: 11, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                )).toList().animate(interval: 50.ms).fadeIn(delay: 800.ms).slideY(begin: 0.1, end: 0),
+                    ),
+                    Text(timeStr,
+                        style: const TextStyle(
+                            color: AppColors.mutedForeground,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              );
+            }).toList()
+              .animate(interval: 50.ms)
+              .fadeIn(delay: 800.ms)
+              .slideY(begin: 0.1, end: 0),
         ],
       ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(height: 100),
+        const Icon(LucideIcons.barChart3, size: 64, color: AppColors.secondarySoft),
+        const SizedBox(height: 20),
+        const Center(
+          child: Text(
+            "Aucune donnée analytique disponible.\nCommencez par créer des demandes.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(height: 24),
+        SangVieButton(
+          label: "Actualiser",
+          onPressed: _refresh,
+          isFullWidth: false,
+        ),
+      ],
     );
   }
 
@@ -313,7 +446,10 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2))
         ],
       ),
       child: const Row(
@@ -321,7 +457,11 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
         children: [
           Icon(LucideIcons.calendar, size: 14, color: AppColors.primary),
           SizedBox(width: 8),
-          Text("CE MOIS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+          Text("TOUT",
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5)),
           SizedBox(width: 4),
           Icon(LucideIcons.chevronDown, size: 14, color: AppColors.secondary),
         ],
@@ -333,7 +473,8 @@ class _HospitalStatsScreenState extends State<HospitalStatsScreen> {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.xxl),
-        child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+        child:
+            CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
       ),
     );
   }

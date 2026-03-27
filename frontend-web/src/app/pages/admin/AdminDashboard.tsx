@@ -186,7 +186,7 @@ export function AdminDashboard() {
                 >
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-xl bg-[#F0F0F0] flex items-center justify-center flex-shrink-0 text-[#888888] font-bold text-[12px]">
-                    {hosp.nom.substring(0, 2).toUpperCase()}
+                    {hosp.nom?.substring(0, 2).toUpperCase() || "H"}
                   </div>
 
                   {/* Info */}
@@ -293,7 +293,7 @@ export function AdminDashboard() {
               <div className="bg-gradient-to-br from-[#CC0000] to-[#990000] p-8 text-white">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-bold text-2xl">
-                    {selectedHospital.nom.substring(0, 2).toUpperCase()}
+                    {selectedHospital.nom?.substring(0, 2).toUpperCase() || "H"}
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold font-sans">{selectedHospital.nom}</h2>

@@ -23,6 +23,20 @@ import { Messages } from "./pages/shared/Messages";
 
 // ── Guard components ──────────────────────────────────────────────────────────
 
+/** Loader plein écran pour les transitions d'auth */
+function AuthLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F7F8]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 rounded-full border-4 border-[#CC0000]/20 border-t-[#CC0000] animate-spin" />
+        <p className="text-[13px] text-[#888888] font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          Chargement...
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Guard pour les routes protégées.
  * Si non authentifié → redirige vers /login.
@@ -31,30 +45,23 @@ import { Messages } from "./pages/shared/Messages";
 function RequireAuth({ roles }: { roles?: ("user" | "hospital" | "admin")[] }) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  if (isLoading) {
-    // Pendant la restauration de session, on affiche un loader minimaliste
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F7F8]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-4 border-[#CC0000]/20 border-t-[#CC0000] animate-spin" />
-          <p className="text-[13px] text-[#888888] font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Chargement...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <AuthLoader />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   // Si des rôles sont exigés et que l'utilisateur n'a pas le bon rôle
-  if (roles && user && !roles.includes(user.role)) {
-    // Redirige vers son espace par défaut
-    if (user.role === "admin") return <Navigate to="/admin/dashboard" replace />;
-    if (user.role === "hospital") return <Navigate to="/hospital/dashboard" replace />;
-    return <Navigate to="/donor/home" replace />;
+  if (roles && user && (!user.role || !roles.includes(user.role))) {
+    // Redirige vers son espace par défaut en évitant les boucles infinies
+    const target = user.role === "admin" ? "/admin/dashboard" :
+                   user.role === "hospital" ? "/hospital/dashboard" :
+                   "/donor/home";
+    
+    // Si on est déjà sur la cible, on ne redirige pas (évite boucle infinie si rôle manquant)
+    if (window.location.pathname === target) return <Outlet />;
+    
+    return <Navigate to={target} replace />;
   }
 
   return <Outlet />;
@@ -67,7 +74,7 @@ function RequireAuth({ roles }: { roles?: ("user" | "hospital" | "admin")[] }) {
 function RedirectIfAuthenticated() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  if (isLoading) return null;
+  if (isLoading) return <AuthLoader />;
 
   if (isAuthenticated && user) {
     if (user.role === "admin") return <Navigate to="/admin/dashboard" replace />;

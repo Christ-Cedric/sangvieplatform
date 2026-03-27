@@ -12,8 +12,7 @@ class HospitalRequestsScreen extends StatefulWidget {
   const HospitalRequestsScreen({super.key});
 
   @override
-  State<HospitalRequestsScreen> createState() =>
-      _HospitalRequestsScreenState();
+  State<HospitalRequestsScreen> createState() => _HospitalRequestsScreenState();
 }
 
 class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
@@ -74,57 +73,68 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
         displacement: 20,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: AppSpacing.lg),
+              _buildPremiumHeader(context),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 120),
+                child: Column(
+                  children: [
+                    SangVieInput(
+                      hint: 'Rechercher par groupe ou description...',
+                      prefixIcon: const Icon(LucideIcons.search,
+                          size: 20, color: AppColors.secondary),
+                      controller: _searchController,
+                      textInputAction: TextInputAction.search,
+                    ).animate().fadeIn(delay: 200.ms),
+                    const SizedBox(height: AppSpacing.xl),
+                    FutureBuilder<List<BloodRequest>>(
+                      future: _requestsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                                ConnectionState.waiting &&
+                            _allRequests.isEmpty) {
+                          return _buildLoadingState();
+                        }
 
-              SangVieInput(
-                hint: 'Rechercher par groupe ou description...',
-                prefixIcon: const Icon(LucideIcons.search, size: 20, color: AppColors.secondary),
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-              ).animate().fadeIn(delay: 200.ms),
+                        if (_activeFiltered.isEmpty && _doneFiltered.isEmpty) {
+                          return _buildEmptyState().animate().fadeIn();
+                        }
 
-              const SizedBox(height: AppSpacing.xl),
-
-              FutureBuilder<List<BloodRequest>>(
-                future: _requestsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting && _allRequests.isEmpty) {
-                    return _buildLoadingState();
-                  }
-
-                  if (_activeFiltered.isEmpty && _doneFiltered.isEmpty) {
-                    return _buildEmptyState().animate().fadeIn();
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_activeFiltered.isNotEmpty) ...[
-                        _buildSectionHeader('DEMANDES ACTIVES (${_activeFiltered.length})'),
-                        ..._activeFiltered.map((r) => _buildRequestCard(r, isFulfilled: false))
-                            .toList()
-                            .animate(interval: 50.ms)
-                            .fadeIn(duration: 400.ms)
-                            .slideY(begin: 0.1, end: 0),
-                      ],
-                      
-                      if (_doneFiltered.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xxl),
-                        _buildSectionHeader('HISTORIQUE (${_doneFiltered.length})'),
-                        ..._doneFiltered.map((r) => _buildRequestCard(r, isFulfilled: true))
-                            .toList()
-                            .animate(interval: 50.ms)
-                            .fadeIn(duration: 400.ms)
-                            .slideY(begin: 0.1, end: 0),
-                      ],
-                    ],
-                  );
-                },
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_activeFiltered.isNotEmpty) ...[
+                              _buildSectionHeader(
+                                  'DEMANDES ACTIVES (${_activeFiltered.length})'),
+                              ..._activeFiltered
+                                  .map((r) =>
+                                      _buildRequestCard(r, isFulfilled: false))
+                                  .toList()
+                                  .animate(interval: 50.ms)
+                                  .fadeIn(duration: 400.ms)
+                                  .slideY(begin: 0.1, end: 0),
+                            ],
+                            if (_doneFiltered.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.xxl),
+                              _buildSectionHeader(
+                                  'HISTORIQUE (${_doneFiltered.length})'),
+                              ..._doneFiltered
+                                  .map((r) =>
+                                      _buildRequestCard(r, isFulfilled: true))
+                                  .toList()
+                                  .animate(interval: 50.ms)
+                                  .fadeIn(duration: 400.ms)
+                                  .slideY(begin: 0.1, end: 0),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -133,15 +143,41 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SangVieTypography.h1('Mes Demandes'),
-        const SizedBox(height: 4),
-        const Text('Gérez vos appels aux dons en temps réel', style: TextStyle(color: AppColors.secondary, fontSize: 16, fontWeight: FontWeight.w600)),
-      ],
-    ).animate().fadeIn().slideX(begin: -0.1, end: 0);
+  Widget _buildPremiumHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, 85, AppSpacing.lg, AppSpacing.xxl),
+      decoration: const BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Appels aux dons'.toUpperCase(),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Gérez vos demandes',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSectionHeader(String title) {
@@ -173,14 +209,18 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
                   width: 54,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: isFulfilled ? AppColors.successGreen.withOpacity(0.08) : AppColors.primarySoft,
+                    color: isFulfilled
+                        ? AppColors.successGreen.withOpacity(0.08)
+                        : AppColors.primarySoft,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Center(
                     child: Text(
                       r.group,
                       style: TextStyle(
-                        color: isFulfilled ? AppColors.successGreen : AppColors.primary,
+                        color: isFulfilled
+                            ? AppColors.successGreen
+                            : AppColors.primary,
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
@@ -193,15 +233,25 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        r.description.isNotEmpty ? r.description : 'Demande de sang ${r.group}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.3),
+                        r.description.isNotEmpty
+                            ? r.description
+                            : 'Demande de sang ${r.group}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            letterSpacing: -0.3),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(LucideIcons.calendar, size: 12, color: AppColors.mutedForeground),
+                          const Icon(LucideIcons.calendar,
+                              size: 12, color: AppColors.mutedForeground),
                           const SizedBox(width: 4),
-                          Text(r.date, style: const TextStyle(color: AppColors.mutedForeground, fontSize: 11, fontWeight: FontWeight.w700)),
+                          Text(r.date,
+                              style: const TextStyle(
+                                  color: AppColors.mutedForeground,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700)),
                         ],
                       ),
                     ],
@@ -232,8 +282,11 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
                       },
                       borderRadius: BorderRadius.circular(4),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-                        child: _infoChip(LucideIcons.users, '${r.responses ?? 0} réponse(s)', color: AppColors.successGreen),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 4),
+                        child: _infoChip(
+                            LucideIcons.users, '${r.responses ?? 0} réponse(s)',
+                            color: AppColors.successGreen),
                       ),
                     ),
                   ],
@@ -242,11 +295,18 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
                   TextButton(
                     onPressed: () => _closeRequest(r.id),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       backgroundColor: AppColors.primarySoft,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md)),
                     ),
-                    child: const Text('CLÔTURER', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    child: const Text('CLÔTURER',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5)),
                   ),
               ],
             ),
@@ -260,13 +320,21 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-        title: const Text('Confirmer la clôture', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: const Text('Cette demande ne sera plus visible pour les donneurs.'),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.xl)),
+        title: const Text('Confirmer la clôture',
+            style: TextStyle(fontWeight: FontWeight.w900)),
+        content:
+            const Text('Cette demande ne sera plus visible pour les donneurs.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler', style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w700))),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler',
+                  style: TextStyle(
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.w700))),
           SangVieButton(
-            label: 'Confirmer', 
+            label: 'Confirmer',
             onPressed: () => Navigator.pop(context, true),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           ),
@@ -280,7 +348,10 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
 
   Widget _urgencyBadge(String urgency, bool isFulfilled) {
     if (isFulfilled) {
-      return const SangVieBadge(label: 'Satisfaite', color: AppColors.successGreen, icon: LucideIcons.checkCircle2);
+      return const SangVieBadge(
+          label: 'Satisfaite',
+          color: AppColors.successGreen,
+          icon: LucideIcons.checkCircle2);
     }
     final isCritical = urgency == 'critical';
     return SangVieBadge(
@@ -297,7 +368,10 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: color ?? AppColors.foreground),
+          style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: color ?? AppColors.foreground),
         ),
       ],
     );
@@ -309,7 +383,9 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
       color: AppColors.inputBackground,
       hasBorder: false,
       child: const Center(
-        child: Text('Aucune demande enregistrée.', style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600)),
+        child: Text('Aucune demande enregistrée.',
+            style: TextStyle(
+                color: AppColors.secondary, fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -318,7 +394,8 @@ class _HospitalRequestsScreenState extends State<HospitalRequestsScreen> {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.xxl),
-        child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+        child:
+            CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
       ),
     );
   }

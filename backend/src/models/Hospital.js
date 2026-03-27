@@ -8,8 +8,10 @@ const hospitalSchema = new mongoose.Schema({
     contact: { type: String, required: true },
     region: { type: String, required: true },
     localisation: { type: String, required: true },
+    address: { type: String },
     motDePasse: { type: String, required: true },
     verified: { type: Boolean, default: false },
+    status: { type: String, enum: ['active', 'suspended'], default: 'active' },
     role: { type: String, default: 'hospital' }
 }, { timestamps: true });
 

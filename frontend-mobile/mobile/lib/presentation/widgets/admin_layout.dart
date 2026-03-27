@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:sangvie/core/providers/notification_provider.dart';
 import 'package:sangvie/core/services/auth_service.dart';
 import 'package:sangvie/core/services/language_service.dart';
 import 'package:sangvie/core/theme/app_colors.dart';
+import 'package:sangvie/presentation/widgets/notification_modal.dart';
 import 'package:sangvie/presentation/widgets/ui_components.dart';
 
 class AdminLayout extends StatelessWidget {
@@ -51,11 +53,8 @@ class AdminLayout extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor:
-            const Color(0xFF0F172A), // Slate 900 (Admin Dark Theme)
-        foregroundColor: Colors.white,
-        elevation: 0,
-        toolbarHeight: 65,
+        toolbarHeight: location.startsWith('/settings') ? 0 : 65,
+        backgroundColor: AppColors.adminPrimary,
         centerTitle: false,
         leading: Builder(
           builder: (context) {
@@ -70,16 +69,49 @@ class AdminLayout extends StatelessWidget {
         ),
         title: _buildAppBarTitle(location),
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(LucideIcons.bell, size: 20),
-          ),
+          _buildNotificationIcon(context),
           const SizedBox(width: 8),
         ],
       ),
       drawer: _buildAdminDrawer(
           context, [...mainNavItems, ...settingsNavItems], location),
       body: child,
+      bottomNavigationBar: SangVieBottomNav(
+        items: mainNavItems,
+        currentPath: location,
+        onTabTap: (path) => context.go(path),
+        activeColor: AppColors.adminPrimary,
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon(BuildContext context) {
+    return Consumer<NotificationProvider>(
+      builder: (context, provider, _) {
+        final unread = provider.unreadCount;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              onPressed: () => NotificationModal.show(context),
+              icon: const Icon(LucideIcons.bell, size: 20, color: Colors.white),
+            ),
+            if (unread > 0)
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.adminPrimary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -118,7 +150,7 @@ class AdminLayout extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: AppColors.adminPrimary,
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: const Icon(LucideIcons.shieldCheck,
@@ -148,6 +180,8 @@ class AdminLayout extends StatelessWidget {
       userSubtitle: 'Gestion Centralisée',
       items: items,
       currentPath: location,
+      gradient: AppColors.adminGradient,
+      activeColor: AppColors.adminPrimary,
       onLogout: () {
         authService.logout();
         context.go('/login');

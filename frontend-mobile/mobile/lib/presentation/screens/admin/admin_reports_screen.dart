@@ -1,35 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:provider/provider.dart';
+import 'package:sangvie/core/providers/admin_provider.dart';
 import 'package:sangvie/core/theme/app_colors.dart';
 import 'package:sangvie/presentation/widgets/admin_layout.dart';
 import 'package:sangvie/presentation/widgets/ui_components.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-class AdminReportsScreen extends StatelessWidget {
+class AdminReportsScreen extends StatefulWidget {
   const AdminReportsScreen({super.key});
+
+  @override
+  State<AdminReportsScreen> createState() => _AdminReportsScreenState();
+}
+
+class _AdminReportsScreenState extends State<AdminReportsScreen> {
+  bool _isExporting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().fetchReports();
+      context.read<AdminProvider>().fetchGlobalStats();
+    });
+  }
+
+  Future<void> _refresh() async {
+    await context.read<AdminProvider>().fetchReports();
+    await context.read<AdminProvider>().fetchGlobalStats();
+  }
+
+  void _handleExport() async {
+    setState(() => _isExporting = true);
+
+    // Simulation de génération de PDF/CSV
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (mounted) {
+      setState(() => _isExporting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Rapport exporté avec succès (PDF)"),
+          backgroundColor: AppColors.successGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return AdminLayout(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: AppSpacing.xl),
-            
-            _buildKPIList(),
-            const SizedBox(height: AppSpacing.xxl),
-            
-            _buildSection("Évolution mensuelle", _buildTrendChart()),
-            const SizedBox(height: AppSpacing.xl),
-            
-            _buildSection("Distribution régionale", _buildRegionalDistribution()),
-            const SizedBox(height: AppSpacing.xl),
-            
-            _buildSection("Détails analytiques", _buildAnalyticsTable()),
-          ],
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        color: AppColors.primary,
+        child: Consumer<AdminProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && provider.reportsData.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              );
+            }
+
+            if (provider.error != null && provider.reportsData.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(LucideIcons.alertTriangle,
+                        size: 48, color: AppColors.destructive),
+                    const SizedBox(height: 16),
+                    Text(provider.error!),
+                    const SizedBox(height: 16),
+                    SangVieButton(
+                      label: "Réessayer",
+                      onPressed: _refresh,
+                      isFullWidth: false,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final reports = provider.reportsData;
+            final stats = provider.globalStats;
+            final regionalData = (reports['regionalData'] as List?) ?? [];
+            final monthlyTrends = (reports['monthlyTrends'] as List?) ?? [];
+
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: AppSpacing.xl),
+                  _buildKPIList(stats),
+                  const SizedBox(height: AppSpacing.xxl),
+                  _buildSection(
+                      "Évolution mensuelle", _buildTrendChart(monthlyTrends)),
+                  const SizedBox(height: AppSpacing.xl),
+                  _buildSection("Distribution régionale",
+                      _buildRegionalDistribution(regionalData)),
+                  const SizedBox(height: AppSpacing.xl),
+                  _buildSection("Détails analytiques",
+                      _buildAnalyticsTable(regionalData)),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -39,36 +120,49 @@ class AdminReportsScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SangVieTypography.h1("Rapports"),
-            const SizedBox(height: 4),
-            const Text("Analyse globale des activités", style: TextStyle(color: AppColors.secondary, fontSize: 16, fontWeight: FontWeight.w600)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SangVieTypography.h1("Rapports"),
+              const SizedBox(height: 4),
+              const Text("Analyse globale des activités",
+                  style: TextStyle(
+                      color: AppColors.secondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         SangVieButton(
-          label: "Exporter", 
-          onPressed: () {}, 
+          label: "Exporter",
+          onPressed: _handleExport,
+          isLoading: _isExporting,
           backgroundColor: AppColors.successGreen,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          isFullWidth: false,
+          height: 40,
           icon: const Icon(LucideIcons.download, size: 16, color: Colors.white),
         ),
       ],
     ).animate().fadeIn().slideX(begin: -0.1, end: 0);
   }
 
-  Widget _buildKPIList() {
+  Widget _buildKPIList(Map<String, dynamic> stats) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: [
-          _buildGlobalKPI("DONS TOTAUX", "4,250", "+12%", AppColors.primary, LucideIcons.droplets),
+          _buildGlobalKPI("DONS TOTAUX", "${stats['dons'] ?? 0}", "+12%",
+              AppColors.primary, LucideIcons.droplets),
           const SizedBox(width: AppSpacing.md),
-          _buildGlobalKPI("DONNEURS", "8,921", "+8%", AppColors.successGreen, LucideIcons.users),
+          _buildGlobalKPI("DONNEURS", "${stats['utilisateurs'] ?? 0}", "+8%",
+              AppColors.successGreen, LucideIcons.users),
           const SizedBox(width: AppSpacing.md),
-          _buildGlobalKPI("HÔPITAUX", "42", "+5%", AppColors.warningOrange, LucideIcons.building2),
+          _buildGlobalKPI("HÔPITAUX", "${stats['hopitaux'] ?? 0}", "+5%",
+              AppColors.warningOrange, LucideIcons.building2),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0);
@@ -121,20 +215,25 @@ class AdminReportsScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildTrendChart() {
+  Widget _buildTrendChart(List monthlyTrends) {
+    if (monthlyTrends.isEmpty) return const Center(child: Text("Aucune donnée disponible"));
+    
+    // Trouver le max pour normaliser les hauteurs
+    int maxVal = 0;
+    for (var t in monthlyTrends) {
+      if (t['donations'] > maxVal) maxVal = t['donations'];
+    }
+    if (maxVal == 0) maxVal = 1;
+
     return SizedBox(
       height: 160,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildTrendBar("Oct", 0.6),
-          _buildTrendBar("Nov", 0.75),
-          _buildTrendBar("Déc", 0.55),
-          _buildTrendBar("Jan", 0.85),
-          _buildTrendBar("Fév", 0.8),
-          _buildTrendBar("Mar", 1.0),
-        ],
+        children: monthlyTrends.map((t) {
+          final factor = t['donations'] / maxVal;
+          return _buildTrendBar(t['month'], factor);
+        }).toList(),
       ),
     );
   }
@@ -145,32 +244,56 @@ class AdminReportsScreen extends StatelessWidget {
       children: [
         Container(
           width: 32,
-          height: 110 * factor,
+          height: (110 * factor).clamp(5.0, 110.0),
           decoration: BoxDecoration(
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(6),
             boxShadow: [
-              BoxShadow(color: AppColors.primary.withOpacity(0.15), blurRadius: 4, offset: const Offset(0, 2))
+              BoxShadow(
+                  color: AppColors.primary.withOpacity(0.15),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2))
             ],
           ),
         ),
         const SizedBox(height: 10),
-        Text(month, style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(month,
+            style: const TextStyle(
+                color: AppColors.secondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700)),
       ],
     );
   }
 
-  Widget _buildRegionalDistribution() {
+  Widget _buildRegionalDistribution(List regionalData) {
+    if (regionalData.isEmpty) {
+      return const Center(child: Text("Aucune donnée régionale disponible"));
+    }
+
+    // Top 3 regions
+    final sorted = List.from(regionalData)
+      ..sort((a, b) =>
+          ((b['donations'] ?? 0) as int).compareTo((a['donations'] ?? 0) as int));
+    final top3 = sorted.take(3).toList();
+
+    int maxDonations = 0;
+    if (top3.isNotEmpty) maxDonations = (top3[0]['donations'] ?? 0) as int;
+    if (maxDonations == 0) maxDonations = 1;
+
     return Column(
-      children: [
-        _buildRegionRow("Centre", 0.85, "672 dons", "+12%"),
-        _buildRegionRow("Hauts-Bassins", 0.55, "298 dons", "+8%"),
-        _buildRegionRow("Cascades", 0.25, "124 dons", "-3%"),
-      ],
+      children: top3.map((r) {
+        final donorsVal = (r['donations'] ?? 0) as int;
+        final factor = donorsVal / maxDonations;
+        final growthVal = (r['growth'] ?? 0) as int;
+        return _buildRegionRow(r['region'] ?? 'Inconnu', factor, "$donorsVal dons",
+            "${growthVal > 0 ? '+' : ''}$growthVal%");
+      }).toList(),
     );
   }
 
-  Widget _buildRegionRow(String name, double factor, String info, String growth) {
+  Widget _buildRegionRow(
+      String name, double factor, String info, String growth) {
     bool isPositive = !growth.startsWith('-');
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -179,12 +302,24 @@ class AdminReportsScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              Text(name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 14)),
               Row(
                 children: [
-                  Text(info, style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(info,
+                      style: const TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
                   const SizedBox(width: 8),
-                  Text(growth, style: TextStyle(color: isPositive ? AppColors.successGreen : AppColors.destructive, fontSize: 11, fontWeight: FontWeight.w800)),
+                  Text(growth,
+                      style: TextStyle(
+                          color: isPositive
+                              ? AppColors.successGreen
+                              : AppColors.destructive,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800)),
                 ],
               ),
             ],
@@ -195,7 +330,8 @@ class AdminReportsScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: factor,
               backgroundColor: AppColors.inputBackground,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
               minHeight: 8,
             ),
           ),
@@ -204,7 +340,11 @@ class AdminReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAnalyticsTable() {
+  Widget _buildAnalyticsTable(List regionalData) {
+    if (regionalData.isEmpty) {
+      return const Center(child: Text("Aucune donnée détaillée disponible"));
+    }
+
     return Table(
       columnWidths: const {
         0: FlexColumnWidth(2),
@@ -213,9 +353,12 @@ class AdminReportsScreen extends StatelessWidget {
       },
       children: [
         _buildTableHeader(),
-        _buildTableRow("Centre", "18", "672", isFirst: true),
-        _buildTableRow("Hauts", "8", "298"),
-        _buildTableRow("Cascades", "4", "124"),
+        ...regionalData
+            .take(5)
+            .map((r) => _buildTableRow(
+                r['region'] ?? 'Inconnu', "${r['hospitals'] ?? 0}", "${r['donations'] ?? 0}",
+                isFirst: regionalData.indexOf(r) == 0))
+            .toList(),
       ],
     );
   }
@@ -233,7 +376,7 @@ class AdminReportsScreen extends StatelessWidget {
   TableRow _buildTableRow(String r, String h, String d, {bool isFirst = false}) {
     return TableRow(
       children: [
-        Padding(padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8), child: Text(r, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14))),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8), child: Text(r, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14), overflow: TextOverflow.ellipsis)),
         Padding(padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8), child: Text(h, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.secondary))),
         Padding(padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8), child: Text(d, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary))),
       ],

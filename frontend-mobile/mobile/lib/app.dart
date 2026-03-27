@@ -26,6 +26,7 @@ import 'package:sangvie/presentation/screens/info/help_screen.dart';
 import 'package:sangvie/presentation/screens/info/privacy_policy_screen.dart';
 import 'package:sangvie/presentation/screens/shared/settings_screen.dart';
 import 'package:sangvie/presentation/screens/shared/conversations_screen.dart';
+import 'package:sangvie/presentation/screens/shared/notifications_screen.dart';
 import 'package:sangvie/presentation/widgets/info_layout.dart';
 import 'package:sangvie/core/services/theme_service.dart';
 import 'package:go_router/go_router.dart';
@@ -82,6 +83,9 @@ class _SangVieAppState extends State<SangVieApp> {
 
         // Conversations Route
         GoRoute(path: '/conversations', builder: (context, state) => const DynamicInfoLayout(child: ConversationsScreen())),
+
+        // Notifications Route
+        GoRoute(path: '/notifications', builder: (context, state) => const DynamicInfoLayout(child: NotificationsScreen())),
       ],
     );
   }

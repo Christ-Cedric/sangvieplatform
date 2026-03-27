@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:sangvie/core/constants/api_constants.dart';
-import 'package:sangvie/core/services/api_service.dart';
+import 'package:provider/provider.dart';
+import 'package:sangvie/core/providers/admin_provider.dart';
 import 'package:sangvie/core/theme/app_colors.dart';
+import 'package:sangvie/data/models/hospital_model.dart';
 import 'package:sangvie/presentation/widgets/admin_layout.dart';
 import 'package:sangvie/presentation/widgets/ui_components.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,42 +16,23 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  late Future<Map<String, dynamic>> _statsFuture;
-  late Future<List<Map<String, dynamic>>> _pendingHospsFuture;
-
   @override
   void initState() {
     super.initState();
-    _statsFuture = _fetchStats();
-    _pendingHospsFuture = _fetchPendingHospitals();
-  }
-
-  Future<Map<String, dynamic>> _fetchStats() async {
-    final data = await ApiService.get(ApiConstants.adminStats);
-    if (data == null) return {};
-    return Map<String, dynamic>.from(data);
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchPendingHospitals() async {
-    final data = await ApiService.get(
-        '${ApiConstants.hospitals}?verified=false&status=pending');
-    if (data == null) return [];
-    final list =
-        data is List ? data : (data['hospitals'] ?? data['data'] ?? []);
-    return List<Map<String, dynamic>>.from(list as List);
-  }
-
-  void _refresh() {
-    setState(() {
-      _statsFuture = _fetchStats();
-      _pendingHospsFuture = _fetchPendingHospitals();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().fetchGlobalStats();
+      context.read<AdminProvider>().fetchHospitals(verified: false);
     });
   }
 
+  Future<void> _refresh() async {
+    await context.read<AdminProvider>().fetchGlobalStats();
+    await context.read<AdminProvider>().fetchHospitals(verified: false);
+  }
+
   Future<void> _validateHospital(String id) async {
-    final res = await ApiService.put(
-        ApiConstants.hospitalById(id), {'verified': true, 'status': 'active'});
-    if (res != null && mounted) {
+    final success = await context.read<AdminProvider>().approveHospital(id);
+    if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Hôpital validé avec succès !'),
           backgroundColor: AppColors.successGreen,
@@ -63,7 +45,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     return AdminLayout(
       child: RefreshIndicator(
-        onRefresh: () async => _refresh(),
+        onRefresh: _refresh,
         color: AppColors.primary,
         displacement: 20,
         child: SingleChildScrollView(
@@ -75,14 +57,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: AppSpacing.xxl),
-              FutureBuilder<Map<String, dynamic>>(
-                future: _statsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+              Consumer<AdminProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading && provider.globalStats.isEmpty) {
                     return _buildLoadingState();
                   }
-                  final s = snapshot.data ?? {};
-                  return _buildStatsGrid(s);
+                  return _buildStatsGrid(provider.globalStats);
                 },
               ),
               const SizedBox(height: AppSpacing.xxxl),
@@ -90,13 +70,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   .animate()
                   .fadeIn(delay: 400.ms),
               const SizedBox(height: AppSpacing.md),
-              FutureBuilder<List<Map<String, dynamic>>>(
-                future: _pendingHospsFuture,
-                builder: (context, snapshot) {
-                  final list = snapshot.data ?? [];
+              Consumer<AdminProvider>(
+                builder: (context, provider, child) {
+                  // Filtrer localement ou via fetch spécifique
+                  final list = provider.allHospitals.where((h) => !h.verified).toList();
                   return _buildPendingHospitalsList(list,
-                      isLoading:
-                          snapshot.connectionState == ConnectionState.waiting);
+                      isLoading: provider.isLoading && list.isEmpty);
                 },
               ),
             ],
@@ -127,25 +106,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final stats = [
       {
         'label': 'Donneurs inscrits',
-        'value': '${s['totalDonneurs'] ?? s['users'] ?? 0}',
+        'value': '${s['utilisateurs'] ?? 0}',
         'icon': LucideIcons.users,
         'color': AppColors.successGreen,
       },
       {
         'label': 'Hôpitaux partenaires',
-        'value': '${s['totalHopitaux'] ?? s['hospitals'] ?? 0}',
+        'value': '${s['hopitaux'] ?? 0}',
         'icon': LucideIcons.building2,
         'color': AppColors.primary,
       },
       {
         'label': 'Dons totaux',
-        'value': '${s['totalDons'] ?? s['donations'] ?? 0}',
+        'value': '${s['dons'] ?? 0}',
         'icon': LucideIcons.droplets,
         'color': Colors.blue,
       },
       {
         'label': 'Alertes critiques',
-        'value': '${s['alertesCritiques'] ?? s['criticalRequests'] ?? 0}',
+        'value': '${s['alertesCritiques'] ?? 0}',
         'icon': LucideIcons.alertTriangle,
         'color': AppColors.warningOrange,
       },
@@ -158,13 +137,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: AppSpacing.md,
         mainAxisSpacing: AppSpacing.md,
-        childAspectRatio: 1.4,
+        childAspectRatio: 1.25, // Un peu plus haut pour éviter les débordements
       ),
       itemCount: stats.length,
       itemBuilder: (context, i) {
         final st = stats[i];
         return SangVieCard(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(12), // Plus de place
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -178,20 +157,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 child: Icon(st['icon'] as IconData,
                     color: st['color'] as Color, size: 20),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(st['value'] as String,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 24,
-                          letterSpacing: -0.5)),
-                  Text(st['label'] as String,
-                      style: const TextStyle(
-                          color: AppColors.secondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
-                ],
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(st['value'] as String,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                              letterSpacing: -0.5)),
+                    ),
+                    Text(st['label'] as String,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: AppColors.secondary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -200,7 +187,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildPendingHospitalsList(List<Map<String, dynamic>> list,
+  Widget _buildPendingHospitalsList(List<Hospital> list,
       {bool isLoading = false}) {
     if (isLoading) return _buildLoadingState();
     if (list.isEmpty) return _buildEmptyState();
@@ -215,7 +202,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildPendingHospitalCard(Map<String, dynamic> h) {
+  Widget _buildPendingHospitalCard(Hospital h) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: SangVieCard(
@@ -238,13 +225,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    h['nom'] ?? h['name'] ?? 'Nom inconnu',
+                    h.nom,
                     style: const TextStyle(
                         fontWeight: FontWeight.w800, fontSize: 16),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    h['email'] ?? 'Aucun email',
+                    h.email,
                     style: const TextStyle(
                         color: AppColors.secondary,
                         fontSize: 13,
@@ -256,9 +243,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             const SizedBox(width: AppSpacing.md),
             SangVieButton(
               label: 'Valider',
-              onPressed: () => _validateHospital(h['_id'] ?? ''),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              // Use a smaller button style if possible, or just keep it compact
+              isFullWidth: false,
+              height: 40,
+              onPressed: () => _validateHospital(h.id),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
           ],
         ),

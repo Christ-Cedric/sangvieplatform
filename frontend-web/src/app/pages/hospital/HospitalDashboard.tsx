@@ -524,12 +524,12 @@ export function HospitalDashboard() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-[#CC0000] text-white flex items-center justify-center font-bold text-xs uppercase shadow-md shadow-[#CC0000]/20">
-                        {res.userId.nom[0]}{res.userId.prenom[0]}
+                        {res.userId?.nom?.[0] || ""}{res.userId?.prenom?.[0] || ""}
                       </div>
                       <div>
-                        <p className="text-[13px] font-bold text-[#111111]">{res.userId.nom} {res.userId.prenom}</p>
+                        <p className="text-[13px] font-bold text-[#111111]">{res.userId?.nom || "Utilisateur"} {res.userId?.prenom || ""}</p>
                         <p className="text-[11px] text-[#AAAAAA] flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> {res.userId.telephone}
+                          <Phone className="w-3 h-3" /> {res.userId?.telephone || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -549,7 +549,7 @@ export function HospitalDashboard() {
                           <CheckCircle className="w-4 h-4" />
                         </button>
                       )}
-                      <a href={`tel:${res.userId.telephone}`} className="p-2 rounded-xl bg-white border border-[#EBEBEB] text-[#555555] shadow-sm hover:bg-[#F5F5F5] transition-colors">
+                      <a href={`tel:${res.userId?.telephone || ""}`} className="p-2 rounded-xl bg-white border border-[#EBEBEB] text-[#555555] shadow-sm hover:bg-[#F5F5F5] transition-colors">
                         <Phone className="w-4 h-4" />
                       </a>
                     </div>

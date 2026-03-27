@@ -13,43 +13,11 @@ class PublicLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final languageService = Provider.of<LanguageService>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(LucideIcons.droplets, color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'SangVie',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          _buildLanguageButton(context, languageService, 'FR', 'fr'),
-          const VerticalDivider(width: 1, indent: 20, endIndent: 20),
-          _buildLanguageButton(context, languageService, 'EN', 'en'),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: child,
-    );
+    return Scaffold(body: child);
   }
 
-  Widget _buildLanguageButton(BuildContext context, LanguageService service, String label, String code) {
+  Widget _buildLanguageButton(BuildContext context, LanguageService service,
+      String label, String code) {
     final isSelected = service.locale.languageCode == code;
     return TextButton(
       onPressed: () => service.setLanguage(code),

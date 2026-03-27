@@ -299,3 +299,14 @@ exports.updateRequestStatus = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Récupérer tous les hôpitaux (public)
+// @route   GET /api/hospitals
+exports.getAllHospitalsPublic = async (req, res) => {
+    try {
+        const hospitals = await Hospital.find({}).select('-motDePasse');
+        res.json(hospitals);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
