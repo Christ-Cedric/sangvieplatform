@@ -93,6 +93,17 @@ exports.respondToRequest = async (req, res) => {
             type: 'reponse_demande'
         });
 
+        // Notifier les administrateurs pour les logs système
+        const admins = await User.find({ role: 'admin' });
+        for (const admin of admins) {
+          await Notification.create({
+            destinataire: admin._id,
+            typeDestinataire: 'Admin',
+            message: `LOG: Réponse d'un donneur (${req.user.nom} ${req.user.prenom}) à la demande ${request.groupeSanguin}`,
+            type: 'systeme'
+          });
+        }
+
         res.status(201).json({ message: "Réponse enregistrée avec succès. Merci pour votre générosité !", donation });
     } catch (error) {
         console.error('ERROR IN respondToRequest:', error);
@@ -141,6 +152,18 @@ exports.getMyDonations = async (req, res) => {
     try {
         const donations = await Donation.find({ userId: req.user._id }).populate('hospitalId', 'nom');
         res.json(donations);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Obtenir le profil actuel complet
+// @route   GET /api/users/profile
+exports.getProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-motDePasse');
+        if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+        res.json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

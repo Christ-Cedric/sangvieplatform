@@ -4,6 +4,9 @@ import { TrendingUp, Users, Droplet, Calendar, Activity, ArrowUpRight, Loader2, 
 import { motion } from "motion/react";
 import { getHospitalStatsApi } from "../../api";
 import { useTranslation } from "../../i18n";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download, RefreshCw } from "lucide-react";
 
 interface StatItem {
   label: string;
@@ -47,6 +50,55 @@ export function HospitalStats() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExportPDF = () => {
+    if (!statsData) return;
+
+    const doc = new jsPDF();
+    const dateStr = new Date().toLocaleDateString("fr-FR");
+
+    doc.setFontSize(22);
+    doc.setTextColor(204, 0, 0); 
+    doc.text("Rapport d'Activité SangVie", 14, 20);
+
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Généré le: ${dateStr}`, 14, 28);
+
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Indicateurs Clés", 14, 40);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [["Indicateur", "Valeur"]],
+      body: [
+        ["Total des demandes", statsData.totalRequests.toString()],
+        ["Donneurs uniques", statsData.uniqueDonors.toString()],
+        ["Poches collectées", statsData.confirmedDonations.toString()],
+        ["Taux de réponse", `${statsData.responseRate}%`],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [204, 0, 0] },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    doc.text("Distribution des Groupes Sanguins", 14, finalY);
+
+    autoTable(doc, {
+      startY: finalY + 5,
+      head: [["Groupe", "Nombre de Dons", "Pourcentage"]],
+      body: statsData.bloodGroupData.map((bg: any) => [
+        bg.group,
+        bg.count.toString(),
+        `${bg.percentage}%`,
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [26, 122, 63] },
+    });
+
+    doc.save(`rapport_hopital_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   if (isLoading) {
@@ -114,20 +166,36 @@ export function HospitalStats() {
               {t("stats.title")}
             </h1>
           </div>
-          {/* Period selector */}
-          <div className="flex bg-[#F0F0F0] rounded-xl p-1 gap-1">
-            {(["week", "month", "year"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all ${
-                  period === p ? "bg-white text-[#0A0A0A] shadow-sm" : "text-[#888888] hover:text-[#555555]"
-                }`}
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
-              >
-                {p === "week" ? t("stats.periods.week") : p === "month" ? t("stats.periods.month") : t("stats.periods.year")}
-              </button>
-            ))}
+          {/* Period selector & Actions */}
+          <div className="flex items-center gap-3">
+            <div className="flex bg-[#F0F0F0] rounded-xl p-1 gap-1">
+              {(["week", "month", "year"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all ${
+                    period === p ? "bg-white text-[#0A0A0A] shadow-sm" : "text-[#888888] hover:text-[#555555]"
+                  }`}
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  {p === "week" ? t("stats.periods.week") : p === "month" ? t("stats.periods.month") : t("stats.periods.year")}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={fetchStats}
+              className="p-2.5 rounded-xl bg-white border border-[#EBEBEB] text-[#555555] hover:text-[#CC0000] hover:border-[#CC0000] transition-all shadow-sm"
+              title="Actualiser"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1A7A3F] text-white text-[13px] font-bold hover:bg-[#156333] transition-all shadow-md"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Exporter</span>
+            </button>
           </div>
         </div>
 

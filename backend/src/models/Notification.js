@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
     typeDestinataire: {
         type: String,
         required: true,
-        enum: ['User', 'Hospital']
+        enum: ['User', 'Hospital', 'Admin']
     },
     message: { type: String, required: true },
     dateHeure: { type: Date, default: Date.now },

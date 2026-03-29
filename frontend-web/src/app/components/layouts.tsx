@@ -8,7 +8,12 @@ import {
 } from "lucide-react";
 import { useLanguage, useTranslation } from "../i18n";
 import { motion, AnimatePresence } from "motion/react";
-import { getHospitalNotificationsApi, markHospitalNotificationsAsReadApi } from "../api";
+import { 
+  getHospitalNotificationsApi, 
+  markHospitalNotificationsAsReadApi, 
+  getAdminNotificationsApi, 
+  markAdminNotificationsAsReadApi 
+} from "../api";
 
 /**
  * Composant de déconnexion réutilisable dans les layouts
@@ -27,14 +32,14 @@ function LogoutButton({ dark = false }: { dark?: boolean }) {
   return (
     <button
       onClick={handleLogout}
-      className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl border transition-all duration-200 group mb-2 ${dark
-        ? "border-[#CC0000]/30 bg-[#CC0000]/10 text-[#CC0000] hover:bg-[#CC0000] hover:text-white"
-        : "border-[#CC0000]/20 bg-[#FFF0F0] text-[#CC0000] hover:bg-[#CC0000] hover:text-white"
+      className={`flex items-center gap-2.5 w-full px-4 py-3 rounded-xl transition-all duration-200 group mb-2 font-bold text-[13px] ${dark
+        ? "bg-[#CC0000] text-white hover:bg-[#A30000] shadow-[0_4px_12px_rgba(204,0,0,0.3)]"
+        : "bg-[#FFF0F0] text-[#CC0000] border border-[#CC0000]/20 hover:bg-[#CC0000] hover:text-white"
         }`}
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       <LogOut className="w-4 h-4 flex-shrink-0" />
-      <span className="text-sm font-semibold">{t("nav.logout")}</span>
+      <span>{t("nav.logout")}</span>
     </button>
   );
 }
@@ -114,7 +119,7 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F7F8] flex flex-col md:flex-row max-w-[1440px] mx-auto relative">
+    <div className="min-h-screen bg-[#F7F7F8] flex flex-col md:flex-row relative">
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between px-5 py-3.5 bg-white border-b border-[#EBEBEB] sticky top-0 z-50 shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
         <Link to="/donor/home" className="flex items-center gap-2 group">
@@ -140,32 +145,24 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] bg-white border-r border-[#EBEBEB] h-screen sticky top-0 shadow-[1px_0_0_#EBEBEB]">
+      <aside className="hidden md:flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 h-screen sticky top-0 shadow-2xl z-50">
         {/* Logo */}
-        <div className="px-6 pt-6 pb-2">
-          <Link to="/donor/home" className="flex items-center gap-2.5 group">
-            <div className="bg-[#CC0000] p-1.5 rounded-lg shadow-sm">
+        <div className="px-6 pt-6 pb-4">
+          <Link to="/donor/home" className="flex items-center gap-3">
+            <div className="bg-[#CC0000] p-1.5 rounded-lg shadow-[0_4px_12px_rgba(204,0,0,0.3)]">
               <Droplet className="text-white w-5 h-5 fill-white" />
             </div>
-            <span
-              className="text-xl font-bold text-[#0A0A0A]"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
-              SangVie
-            </span>
+            <div>
+              <span className="text-lg font-bold text-white leading-none block" style={{ fontFamily: "'DM Sans', sans-serif" }}>SangVie</span>
+              <span className="text-[10px] text-[#CC0000] font-semibold tracking-widest uppercase mt-0.5 block" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("donor.space")}</span>
+            </div>
           </Link>
         </div>
 
-        {/* Donor tag */}
-        <div className="px-6 py-3">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#CC0000] bg-[#FFF0F0] px-2.5 py-1 rounded-full border border-[#CC0000]/20 tracking-wide">
-            <Droplet className="w-3 h-3 fill-[#CC0000]" />
-            {t("donor.space")}
-          </span>
-        </div>
+        <div className="mx-6 border-t border-white/10 mb-4" />
 
         {/* Nav */}
-        <nav className="flex-1 px-3 flex flex-col gap-0.5 mt-2">
+        <nav className="flex-1 px-3 flex flex-col gap-0.5 overflow-y-auto mt-2">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
             return (
@@ -173,15 +170,15 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive
-                  ? "bg-[#CC0000]/8 text-[#CC0000]"
-                  : "text-[#555555] hover:bg-[#F7F7F8] hover:text-[#111111]"
+                  ? "bg-[#1E1E1E] text-white"
+                  : "text-[#999999] hover:bg-[#1A1A1A] hover:text-white"
                   }`}
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 <div
                   className={`p-1.5 rounded-lg transition-colors ${isActive
                     ? "bg-[#CC0000] text-white"
-                    : "bg-[#F0F0F0] text-[#888888] group-hover:bg-[#E8E8E8]"
+                    : "bg-[#1A1A1A] text-[#666666] group-hover:text-white"
                     }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -190,7 +187,7 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
                   {t(item.labelKey as any)}
                 </span>
                 {isActive && (
-                  <ChevronRight className="w-3.5 h-3.5 ml-auto text-[#CC0000]/60" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#CC0000]" />
                 )}
               </Link>
             );
@@ -198,21 +195,21 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* User + Logout section */}
-        <div className="border-t border-[#EBEBEB] mx-3 pt-3 mb-3">
+        <div className="px-4 mb-6 mt-auto pt-6 border-t border-white/10 relative z-20">
           {/* User info */}
-          <div className="flex items-center gap-3 px-2.5 py-2 rounded-xl mb-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#CC0000] to-[#990000] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1A1A1A] border border-[#252525] mb-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#CC0000] to-[#990000] flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg">
               {user?.nom?.split(" ")?.map((n: string) => n[0])?.join("")?.slice(0, 2) || "U"}
             </div>
             <div className="flex-1 truncate">
               <p
-                className="text-sm font-semibold text-[#111111] truncate"
+                className="text-sm font-bold text-white truncate"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 {user?.nom || t("nav.user.default")}
               </p>
               <p
-                className="text-xs text-[#888888]"
+                className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-0.5"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 {t("donor.active")}
@@ -220,12 +217,12 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           {/* Logout button */}
-          <LogoutButton />
+          <LogoutButton dark />
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 pb-20 md:pb-0 overflow-y-auto w-full min-h-screen">
+      <main className="flex-1 h-screen overflow-y-auto bg-[#F7F7F8] md:pb-0 w-full relative">
         {children}
       </main>
 
@@ -299,8 +296,15 @@ function HospitalNotifications() {
 
   const handleNotifClick = (n: any) => {
     setIsOpen(false);
-    if (n.type === 'reponse_demande' || n.message.toLowerCase().includes('répondu')) {
+    const msg = n.message.toLowerCase();
+    if (n.type === 'reponse_demande' || msg.includes('répondu')) {
       navigate('/messages');
+    } else if (msg.includes('rapport') || msg.includes('statistique') || msg.includes('stats')) {
+      navigate('/hospital/stats');
+    } else if (msg.includes('demande') || msg.includes('urgent')) {
+      navigate('/hospital/requests');
+    } else if (msg.includes('profil') || msg.includes('validé')) {
+      navigate('/hospital/profile');
     }
   };
 
@@ -371,6 +375,123 @@ function HospitalNotifications() {
     </div>
   );
 }
+
+/** Notification Center for Admins */
+function AdminNotifications() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const fetchNotifs = async () => {
+    try {
+      const data = await getAdminNotificationsApi();
+      setNotifications(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifs();
+    const timer = setInterval(fetchNotifs, 15000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.lue).length;
+
+  const handleOpen = async () => {
+    if (!isOpen && unreadCount > 0) {
+      try {
+        await markAdminNotificationsAsReadApi();
+        setNotifications(notifications.map(n => ({ ...n, lue: true })));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    setIsOpen(!isOpen);
+  };
+
+  const handleNotifClick = (n: any) => {
+    setIsOpen(false);
+    const msg = n.message.toLowerCase();
+    if (msg.includes('rapport') || msg.includes('statistique') || msg.includes('stats')) {
+      navigate('/admin/reports');
+    } else if (msg.includes('hôpital') || msg.includes('inscription') || msg.includes('attente')) {
+      navigate('/admin/dashboard');
+    } else if (msg.includes('donneur') || msg.includes('utilisateur')) {
+      navigate('/admin/users');
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleOpen}
+        className="relative p-2 rounded-xl hover:bg-[#F5F5F7] transition-colors"
+      >
+        <Bell className="w-5 h-5 text-[#444444]" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-[#CC0000] rounded-full border-2 border-white text-[9px] text-white font-bold flex items-center justify-center shadow-sm">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.95 }}
+              className="absolute right-0 mt-4 w-85 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-[#EBEBEB] z-[110] overflow-hidden"
+            >
+              <div className="px-5 py-3 border-b border-[#F0F0F0] bg-[#FAFAFA] flex items-center justify-between">
+                <span className="text-[13px] font-bold text-[#111111]">{t("notif.title") || "Notifications"}</span>
+                <span className="text-[10px] font-bold text-[#CC0000] bg-[#FFF0F0] px-2 py-0.5 rounded-full">
+                  {notifications.length}
+                </span>
+              </div>
+              <div className="max-h-[350px] overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-10 text-center">
+                    <Bell className="w-8 h-8 text-[#DDDDDD] mx-auto mb-2" />
+                    <p className="text-xs text-[#AAAAAA]">{t("notif.none") || "Aucune notification"}</p>
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n._id}
+                      onClick={() => handleNotifClick(n)}
+                      className="p-5 border-b border-[#F8F8F8] hover:bg-[#F9F9F9] transition-colors group/item cursor-pointer"
+                    >
+                      <div className="flex gap-3">
+                        {!n.lue && <div className="w-2 h-2 rounded-full bg-[#CC0000] mt-1.5 flex-shrink-0" />}
+                        <div className="flex-1">
+                          <p className="text-[13px] text-[#333333] leading-relaxed font-medium group-hover/item:text-[#111111]">{n.message}</p>
+                          <p className="text-[10px] text-[#AAAAAA] mt-2 font-medium flex items-center gap-1.5">
+                            <Clock className="w-3 h-3" />
+                            {new Date(n.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="p-3 bg-[#FBFBFB] text-center border-t border-[#F0F0F0]">
+                <button onClick={() => setIsOpen(false)} className="text-[11px] font-bold text-[#888888] hover:text-[#555555]">{t("notif.close") || "Fermer"}</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 
 /* ============================================================
    HOSPITAL LAYOUT
@@ -472,7 +593,7 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+      <main className="flex-1 h-screen overflow-y-auto bg-[#F7F7F8] flex flex-col overflow-x-hidden relative">
         <header className="lg:hidden flex items-center justify-between px-5 py-3.5 bg-white border-b border-[#EBEBEB] sticky top-0 z-50 shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
           <Link to="/hospital/dashboard" className="flex items-center gap-2">
             <div className="bg-[#CC0000] p-1 rounded-lg">
@@ -523,20 +644,16 @@ export function HospitalLayout({ children }: { children: React.ReactNode }) {
 /* ============================================================
    ADMIN LAYOUT
    ============================================================ */
-export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  const { user } = useAuth();
-  const { t } = useTranslation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const navItems = [
-    { icon: LayoutDashboard, labelKey: "nav.admin.dashboard", path: "/admin/dashboard", label: "Dashboard" },
-    { icon: Stethoscope, labelKey: "nav.admin.hospitals", path: "/admin/hospitals", label: "Hôpitaux" },
-    { icon: User, labelKey: "nav.admin.users", path: "/admin/users", label: "Donneurs" },
-    { icon: BarChart3, labelKey: "nav.admin.reports", path: "/admin/reports", label: "Rapports" },
-  ];
+const ADMIN_NAV_ITEMS = [
+  { icon: LayoutDashboard, labelKey: "nav.admin.dashboard", path: "/admin/dashboard" },
+  { icon: Stethoscope, labelKey: "nav.admin.hospitals", path: "/admin/hospitals" },
+  { icon: User, labelKey: "nav.admin.users", path: "/admin/users" },
+  { icon: BarChart3, labelKey: "nav.admin.reports", path: "/admin/reports" },
+];
 
-  const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
+function AdminSidebarContent({ onLinkClick, user, location, t }: any) {
+  return (
     <>
       {/* Logo */}
       <div className="px-6 pt-6 pb-4">
@@ -551,23 +668,23 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </Link>
       </div>
 
-      <div className="mx-6 border-t border-[#1E1E1E] mb-4" />
+      <div className="mx-6 border-t border-white/10 mb-4" />
 
       {/* Nav */}
-      <nav className="flex-1 px-3 flex flex-col gap-0.5">
-        {navItems.map((item) => {
+      <nav className="flex-1 px-3 flex flex-col gap-0.5 overflow-y-auto pt-2">
+        {ADMIN_NAV_ITEMS.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
               onClick={onLinkClick}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive ? "bg-[#1E1E1E] text-white" : "text-[#666666] hover:bg-[#1A1A1A] hover:text-[#AAAAAA]"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive ? "bg-[#1E1E1E] text-white" : "text-[#999999] hover:bg-[#1A1A1A] hover:text-white"
                 }`}
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <item.icon
-                className={`flex-shrink-0 ${isActive ? "text-[#CC0000]" : "text-[#555555] group-hover:text-[#777777]"}`}
+                className={`flex-shrink-0 ${isActive ? "text-[#CC0000]" : "text-[#666666] group-hover:text-[#999999]"}`}
                 style={{ width: "18px", height: "18px" }}
               />
               <span className="text-sm font-medium">{t(item.labelKey as any)}</span>
@@ -578,20 +695,27 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Admin user + Logout */}
-      <div className="px-3 mb-5">
+      <div className="px-4 mb-6 mt-auto pt-6 border-t border-white/10 relative z-20">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1A1A1A] border border-[#252525] mb-2">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#CC0000] to-[#990000] flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg">
             {user?.nom?.split(" ")?.map((n: string) => n[0])?.join("")?.slice(0, 2) || "A"}
           </div>
           <div className="flex-1 truncate">
-            <p className="text-sm font-semibold text-white truncate" style={{ fontFamily: "'DM Sans', sans-serif" }}>{user?.nom || "Admin"}</p>
-            <p className="text-xs text-[#555555]" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("nav.admin.role")}</p>
+            <p className="text-sm font-bold text-white truncate" style={{ fontFamily: "'DM Sans', sans-serif" }}>{user?.nom || "Admin"}</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-0.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("nav.admin.role")}</p>
           </div>
         </div>
         <LogoutButton dark />
       </div>
     </>
   );
+}
+
+export function AdminLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#F7F7F8] flex flex-col md:flex-row max-w-[1440px] mx-auto relative overflow-x-hidden">
@@ -632,19 +756,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <SidebarContent onLinkClick={() => setIsSidebarOpen(false)} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+            <AdminSidebarContent 
+              onLinkClick={() => setIsSidebarOpen(false)} 
+              user={user} 
+              location={location} 
+              t={t} 
+            />
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] bg-[#111111] border-r border-[#1E1E1E] h-screen sticky top-0">
-        <SidebarContent />
+      <aside className="hidden md:flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 h-screen sticky top-0 shadow-2xl z-50">
+        <AdminSidebarContent user={user} location={location} t={t} />
       </aside>
 
       {/* Main */}
-      <main className="flex-1 bg-[#F7F7F8] min-h-screen">
+      <main className="flex-1 h-screen overflow-y-auto bg-[#F7F7F8] relative">
         {/* Desktop Top bar */}
         <div className="hidden md:flex bg-white border-b border-[#EBEBEB] px-8 py-4 items-center justify-between sticky top-0 z-10 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
           <div>
@@ -652,10 +781,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <p className="text-sm font-semibold text-[#111111]" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("nav.admin.view")}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl hover:bg-[#F5F5F5] transition-colors">
-              <Bell className="w-5 h-5 text-[#444444]" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#CC0000] rounded-full" />
-            </button>
+            <AdminNotifications />
           </div>
         </div>
         <div className="p-4 md:p-8">{children}</div>

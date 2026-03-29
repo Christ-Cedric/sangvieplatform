@@ -26,6 +26,7 @@ import bloodBagImage from "../../../blood-bag.png";
 
 type UserType = "donor" | "hospital";
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const REGIONS = ["Bankui", "Djôrô", "Goulmou", "Guiriko", "Kadiogo", "Kuilsé", "Liptako", "Nando", "Nakambé", "Nazinon", "Oubri", "Sirba", "Soum", "Sourou", "Tannounyan", "Tapoa", "Yaadga"];
 
 export function Register() {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export function Register() {
           email: formData.email,
           motDePasse: formData.password,
           telephone: formData.phone.replace(/\s/g, ""),
-          lieuResidence: formData.location || t("auth.register.not_provided"),
+          lieuResidence: `${formData.region}, ${formData.location}` || t("auth.register.not_provided"),
           groupeSanguin: selectedBloodGroup,
         });
         login(data);
@@ -382,6 +383,43 @@ export function Register() {
                           />
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Région
+                          </label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <select 
+                              value={formData.region}
+                              onChange={(e) => handleChange("region", e.target.value)}
+                              required
+                              className="w-full h-10 pl-10 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all appearance-none"
+                            >
+                              <option value="">Sélectionner une région</option>
+                              {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Ville / Secteur
+                          </label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Input 
+                              type="text" 
+                              placeholder="Ex: Ouagadougou, Secteur 15" 
+                              value={formData.location} 
+                              onChange={(e) => handleChange("location", e.target.value)} 
+                              required 
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <>
@@ -434,6 +472,43 @@ export function Register() {
                             required 
                             className="pl-10"
                           />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Région de résidence
+                          </label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <select 
+                              value={formData.region}
+                              onChange={(e) => handleChange("region", e.target.value)}
+                              required
+                              className="w-full h-10 pl-10 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all appearance-none"
+                            >
+                              <option value="">Région</option>
+                              {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Ville / Localité
+                          </label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Input 
+                              type="text" 
+                              placeholder="Ouagadougou, Bobo..." 
+                              value={formData.location} 
+                              onChange={(e) => handleChange("location", e.target.value)} 
+                              required 
+                              className="pl-10"
+                            />
+                          </div>
                         </div>
                       </div>
 

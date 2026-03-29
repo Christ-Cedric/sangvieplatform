@@ -36,6 +36,17 @@ exports.createRequest = async (req, res) => {
             });
         }
 
+        // Notifier les administrateurs pour les logs système
+        const admins = await User.find({ role: 'admin' });
+        for (const admin of admins) {
+          await Notification.create({
+            destinataire: admin._id,
+            typeDestinataire: 'Admin',
+            message: `LOG: Nouvelle demande de sang (${groupeSanguin}) par l'Hôpital ${req.user.nom}`,
+            type: 'systeme'
+          });
+        }
+
         res.status(201).json(request);
     } catch (error) {
         console.error('ERROR IN createRequest:', error);
@@ -108,6 +119,18 @@ exports.confirmDonation = async (req, res) => {
             message: `Félicitations ! Votre don à l'Hôpital ${req.user.nom} a été validé. Vous avez sauvé des vies !`,
             type: 'don_valide'
         });
+
+        // Notifier les administrateurs pour les logs système
+        const donorsUser = await User.findById(donation.userId);
+        const admins = await User.find({ role: 'admin' });
+        for (const admin of admins) {
+          await Notification.create({
+            destinataire: admin._id,
+            typeDestinataire: 'Admin',
+            message: `LOG: Don de sang confirmé (${donation.groupeSanguin}) par ${donorsUser?.nom} ${donorsUser?.prenom} à l'Hôpital ${req.user.nom}`,
+            type: 'systeme'
+          });
+        }
 
         res.json({ message: "Don confirmé avec succès", donation });
     } catch (error) {

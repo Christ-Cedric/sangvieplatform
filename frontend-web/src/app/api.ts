@@ -235,6 +235,10 @@ export async function updateUserProfileApi(data: any) {
   });
 }
 
+export async function getUserProfileApi() {
+  return request<any>("/users/profile");
+}
+
 // ── Hospitals ─────────────────────────────────────────────────────────────────
 
 export async function getHospitalStatsApi() {
@@ -308,3 +312,14 @@ export async function getAdminStatsApi() {
 export async function getAdminReportsApi() {
   return request<any>("/admin/reports");
 }
+
+export async function getAdminNotificationsApi() {
+  return request<any[]>("/admin/notifications");
+}
+
+export async function markAdminNotificationsAsReadApi() {
+  return request<any>("/admin/notifications/read", {
+    method: "PUT",
+  });
+}
+

@@ -202,7 +202,7 @@ const translations = {
     "messages.welcome.sub": "Sélectionnez une discussion dans la liste pour commencer à échanger avec un hôpital ou un donneur.",
 
     "home.hero.pill": "Réseau de don de sang · Burkina Faso",
-    "home.hero.title": "Le réseau solidaire de {span}",
+    "home.hero.title": "Le réseau solidaire de don de sang ",
     "home.hero.title_span": "don de sang",
     "home.hero.body": "Rejoignez notre communauté. Répondez aux urgences de votre région et sauvez des vies en temps réel.",
     "home.hero.cta_donor": "Devenir donneur",
@@ -349,7 +349,7 @@ const translations = {
     "map.urgency.critical": "Critique",
     "map.urgency.moderate": "Modérée",
 
-    "admin.dashboard.title": "Tableau de bord Admin 🛡️",
+    "admin.dashboard.title": "Tableau de bord Admin ",
     "admin.dashboard.sub": "Vue nationale",
     "admin.dashboard.desc": "Gérez le réseau SangVie au niveau national",
     "admin.dashboard.refresh": "Actualiser",
@@ -635,7 +635,7 @@ const translations = {
     "donor.home.urgency.vital": "Vital urgency",
     "donor.home.time.now": "Just now",
     "admin.dashboard.this_month": "this month",
- 
+
     "messages.title": "Discussions",
     "messages.empty": "No discussions",
     "messages.hospital_default": "Hospital",
@@ -685,7 +685,7 @@ const translations = {
     "stats.activity.empty": "No recent activity.",
     "stats.activity.donations_count": "{count} donations",
     "hospital.stats.partners": "Partners",
- 
+
     "hospital.requests.title": "Blood Requests",
     "hospital.requests.sub": "Management",
     "hospital.requests.new_btn": "New Request",

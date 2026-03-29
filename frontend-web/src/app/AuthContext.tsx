@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import type { LoginResponse } from "./api";
+import { getUserProfileApi, type LoginResponse } from "./api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (data: LoginResponse) => void;
   logout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
@@ -55,7 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedUser = localStorage.getItem(USER_KEY);
       if (storedToken && storedUser) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        
+        // Rafraîchir le profil en arrière-plan pour avoir les données les plus fraîches (groupe sanguin, etc.)
+        refreshProfileWithToken(storedToken);
       }
     } catch {
       // Corrupted storage — clear it
@@ -65,6 +70,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, []);
+
+  const refreshProfileWithToken = async (validToken: string) => {
+    try {
+      // On utilise fetch direct pour éviter des boucles si refreshProfile dépend de user
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/users/profile`, {
+        headers: { "Authorization": `Bearer ${validToken}` }
+      });
+      if (response.ok) {
+        const freshUser = await response.json();
+        setUser(freshUser);
+        localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
+      }
+    } catch (e) {
+      console.error("Failed to refresh profile:", e);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (!token) return;
+    try {
+      const freshUser = await getUserProfileApi();
+      setUser(freshUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(freshUser));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   /** Appelé après un login ou register réussi */
   const login = useCallback((data: LoginResponse) => {
@@ -94,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user && !!token,
         login,
         logout,
+        refreshProfile,
       }}
     >
       {children}

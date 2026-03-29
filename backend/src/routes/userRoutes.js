@@ -8,7 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const { updateDonorStatus, getMyDonations, respondToRequest, updateProfile } = require('../controllers/userController');
+const { updateDonorStatus, getMyDonations, respondToRequest, updateProfile, getProfile } = require('../controllers/userController');
 
 /**
  * @swagger
@@ -21,8 +21,17 @@ const { updateDonorStatus, getMyDonations, respondToRequest, updateProfile } = r
  *     responses:
  *       200:
  *         description: Profil mis à jour
+ *   get:
+ *     summary: Obtenir le profil actuel
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil retourné
  */
 router.put('/profile', protect, updateProfile);
+router.get('/profile', protect, getProfile);
 
 /**
  * @swagger

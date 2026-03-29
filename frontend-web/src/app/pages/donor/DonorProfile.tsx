@@ -33,6 +33,18 @@ export function DonorProfile() {
     fetchStats();
   }, []);
 
+  // Synchroniser formData avec user quand le contexte change ou se charge
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        nom: user.nom || "",
+        prenom: user.prenom || "",
+        telephone: user.telephone || "",
+        lieuResidence: user.lieuResidence || "",
+      });
+    }
+  }, [user]);
+
   const fetchStats = async () => {
     try {
       const donations = await getMyDonationsApi();
@@ -186,8 +198,8 @@ export function DonorProfile() {
             <ProfileField icon={UserIcon} label={t("profile.lastname")} field="nom" value={formData.nom} />
             <ProfileField icon={Phone} label={t("profile.phone")} field="telephone" value={formData.telephone} />
             <ProfileField icon={MapPin} label={t("profile.residence")} field="lieuResidence" value={formData.lieuResidence} />
-            <ProfileField icon={Droplet} label={t("profile.blood_group")} value={user?.groupeSanguin || ""} editable={false} />
-            <ProfileField icon={Calendar} label={t("profile.reg_date")} value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"} editable={false} />
+            <ProfileField icon={Droplet} label={t("profile.blood_group")} value={user?.groupeSanguin || "—"} editable={false} />
+            <ProfileField icon={Calendar} label={t("profile.reg_date")} value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : "—"} editable={false} />
           </div>
 
           <AnimatePresence>

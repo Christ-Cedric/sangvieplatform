@@ -9,7 +9,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
-const { verifyHospital, suspendAccount, deleteAccount, getStats, getPendingHospitals, getAllHospitals, getAllUsers, getReports } = require('../controllers/adminController');
+const { verifyHospital, suspendAccount, deleteAccount, getStats, getPendingHospitals, getAllHospitals, getAllUsers, getReports, getNotifications, markNotificationsAsRead } = require('../controllers/adminController');
 
 /**
  * @swagger
@@ -90,5 +90,8 @@ router.put('/suspend/:id', protect, authorize('admin'), suspendAccount);
  *         description: Statistiques retournées
  */
 router.get('/stats', protect, authorize('admin'), getStats);
+
+router.get('/notifications', protect, authorize('admin'), getNotifications);
+router.put('/notifications/read', protect, authorize('admin'), markNotificationsAsRead);
 
 module.exports = router;

@@ -27,22 +27,34 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const ACTIVITIES = [
-    { time: "10:42", text: t("admin.dashboard.activities.critical_published"), entity: "CMA Pissy", type: "alert" },
-    { time: "09:15", text: t("admin.dashboard.activities.donation_confirmed"), entity: "John Doe · O+", type: "success" },
-    { time: t("admin.dashboard.activities.yesterday"), text: t("admin.dashboard.activities.hospital_validated"), entity: "Clinique Sandof", type: "success" },
-    { time: t("admin.dashboard.activities.yesterday"), text: t("admin.dashboard.activities.report_generated"), entity: "Super Admin", type: "info" },
-    { time: t("admin.dashboard.activities.days_ago", { count: "3" }), text: t("admin.dashboard.activities.donor_registered"), entity: "+226 70 12 34 56", type: "info" },
-  ];
-
   const [stats, setStats] = useState<any>(null);
   const [pendingHospitals, setPendingHospitals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedHospital, setSelectedHospital] = useState<any>(null);
+  const [showLogs, setShowLogs] = useState(false);
+
+  const getRelativeTime = (date: string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return t("donor.home.time.now") || "À l'instant";
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${days}j`;
+  };
+
+  const activities = stats?.recentActivities || [];
 
   useEffect(() => {
     fetchData();
+    // Auto refresh toutes les 30 secondes pour voir les nouvelles activités en direct
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
@@ -52,6 +64,7 @@ export function AdminDashboard() {
         getAdminStatsApi(),
         getPendingHospitalsApi(),
       ]);
+      console.log("DEBUG ADMIN STATS:", statsData);
       setStats(statsData);
       setPendingHospitals(hospitalsData);
     } catch (error) {
@@ -248,8 +261,8 @@ export function AdminDashboard() {
 
           <div className="flex-1 p-5">
             <div className="relative flex flex-col gap-5 before:absolute before:left-[13px] before:top-2 before:bottom-2 before:w-px before:bg-[#F0F0F0]">
-              {ACTIVITIES.map((act, i) => {
-                const style = ACTIVITY_STYLES[act.type as keyof typeof ACTIVITY_STYLES];
+              {activities.slice(0, 10).map((act: any, i: number) => {
+                const style = ACTIVITY_STYLES[act.type as keyof typeof ACTIVITY_STYLES] || ACTIVITY_STYLES.info;
                 return (
                   <motion.div
                     key={i}
@@ -268,17 +281,22 @@ export function AdminDashboard() {
                         {act.text}
                       </p>
                       <p className="text-[11px] text-[#AAAAAA] mt-0.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                        {act.entity} · {act.time}
+                        {act.entity} · {getRelativeTime(act.date)}
                       </p>
                     </div>
                   </motion.div>
                 );
               })}
+              {activities.length === 0 && (
+                <p className="text-[13px] text-[#AAAAAA] text-center italic py-4">
+                  {t("stats.activity.empty") || "Aucune activité récente."}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="px-5 pb-5">
-            <Button variant="secondary" size="sm" className="w-full text-[13px]">
+            <Button variant="secondary" size="sm" className="w-full text-[13px]" onClick={() => setShowLogs(true)}>
               {t("admin.system.view_logs")}
             </Button>
           </div>
@@ -379,6 +397,38 @@ export function AdminDashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* System Logs Modal */}
+      <Dialog open={showLogs} onOpenChange={setShowLogs}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("admin.system.activity")}</DialogTitle>
+            <DialogDescription>Historique complet des actions système</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto py-4">
+            {activities.map((act: any, i: number) => {
+              const style = ACTIVITY_STYLES[act.type as keyof typeof ACTIVITY_STYLES] || ACTIVITY_STYLES.info;
+              return (
+                <div key={i} className="flex gap-3 items-start border-b border-[#F5F5F5] pb-3 last:border-0">
+                   <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${style.dot}`} />
+                   <div>
+                     <p className="text-[13px] font-semibold text-[#111111]">{act.text}</p>
+                     <p className="text-[11px] text-[#AAAAAA] mt-0.5">{act.entity} · {new Date(act.date).toLocaleString('fr-FR')}</p>
+                   </div>
+                </div>
+              );
+            })}
+            {activities.length === 0 && (
+              <p className="text-center text-[#AAAAAA] py-8 italic text-sm">
+                Aucun log disponible pour le moment.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setShowLogs(false)}>Fermer</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AdminLayout>

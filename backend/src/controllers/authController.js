@@ -18,10 +18,11 @@ exports.registerUser = async (req, res) => {
 
         const user = await User.create({ nom, prenom, email, motDePasse, telephone, lieuResidence, groupeSanguin });
 
-        res.status(201).json({
-            _id: user._id, nom, prenom, email, telephone, role: user.role,
-            token: generateToken(user._id)
-        });
+        const userResponse = user.toObject();
+        delete userResponse.motDePasse;
+        userResponse.token = generateToken(user._id);
+
+        res.status(201).json(userResponse);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -40,10 +41,11 @@ exports.registerHospital = async (req, res) => {
             nom, email, motDePasse, numeroAgrement, contact, region, localisation
         });
 
-        res.status(201).json({
-            _id: hospital._id, nom, email, contact, role: hospital.role,
-            token: generateToken(hospital._id)
-        });
+        const hospitalResponse = hospital.toObject();
+        delete hospitalResponse.motDePasse;
+        hospitalResponse.token = generateToken(hospital._id);
+
+        res.status(201).json(hospitalResponse);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
