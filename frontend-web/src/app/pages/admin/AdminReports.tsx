@@ -131,48 +131,48 @@ export function AdminReports() {
 
         {/* Global KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-[#CC0000] to-[#990000] text-white">
+          <Card className="bg-gradient-to-br from-[#FFFFFF] to-[#FFFFFF] text-indigo-600">
             <div className="flex items-center justify-between mb-2">
-              <Droplet className="w-8 h-8 opacity-80" />
+              <Droplet className="w-7 h-7 opacity-70 bg-indigo-100 border border-indigo-200 rounded-full p-1 " />
               <div className="flex items-center gap-1 text-sm">
                 {data.growth?.donations >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                 <span>{data.growth?.donations >= 0 ? '+' : ''}{data.growth?.donations || 0}%</span>
               </div>
             </div>
-            <Typography.H2 className="text-white text-3xl mb-1">{(data.currentMonthDonations || 0).toLocaleString()}</Typography.H2>
-            <Typography.Body className="text-white/90 text-sm">{t("admin.stats.donations")} ({t("admin.dashboard.this_month")})</Typography.Body>
+            <Typography.H2 className="text-black text-3xl mb-1">{(data.currentMonthDonations || 0).toLocaleString()}</Typography.H2>
+            <Typography.Body className="text-black/90 text-sm">{t("admin.stats.donations")} ({t("admin.dashboard.this_month")})</Typography.Body>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#1A7A3F] to-[#0F5028] text-white">
+          <Card className="bg-gradient-to-br from-[#FFFFFF] to-[#FFFFFF]  text-orange-600">
             <div className="flex items-center justify-between mb-2">
-              <Users className="w-8 h-8 opacity-80" />
+              <Users className="w-7 h-7 opacity-70 bg-orange-100 border border-orange-200 rounded-full p-1 " />
               <div className="flex items-center gap-1 text-sm">
                 {data.growth?.donors >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                 <span>{data.growth?.donors >= 0 ? '+' : ''}{data.growth?.donors || 0}%</span>
               </div>
             </div>
-            <Typography.H2 className="text-white text-3xl mb-1">{(data.activeDonorsCount || 0).toLocaleString()}</Typography.H2>
-            <Typography.Body className="text-white/90 text-sm">{t("admin.users.active")}</Typography.Body>
+            <Typography.H2 className="text-black text-3xl mb-1">{(data.activeDonorsCount || 0).toLocaleString()}</Typography.H2>
+            <Typography.Body className="text-black/90 text-sm">{t("admin.users.active")}</Typography.Body>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#D4720B] to-[#A85A09] text-white">
+          <Card className="bg-gradient-to-br from-[#FFFFFF] to-[#FFFFFF]  text-green-600">
             <div className="flex items-center justify-between mb-2">
-              <Building2 className="w-8 h-8 opacity-80" />
+              <Building2 className="w-7 h-7 opacity-70 bg-green-100 border border-green-200 rounded-full p-1 " />
               <div className="flex items-center gap-1 text-sm">
                 {data.growth?.hospitals >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                 <span>{data.growth?.hospitals >= 0 ? '+' : ''}{data.growth?.hospitals || 0}%</span>
               </div>
             </div>
-            <Typography.H2 className="text-white text-3xl mb-1">{totalHospitals}</Typography.H2>
-            <Typography.Body className="text-white/90 text-sm">{t("hospital.stats.partners")}</Typography.Body>
+            <Typography.H2 className="text-black text-3xl mb-1">{totalHospitals}</Typography.H2>
+            <Typography.Body className="text-black/90 text-sm">{t("hospital.stats.partners")}</Typography.Body>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#111111] to-[#333333] text-white">
+          <Card className="bg-gradient-to-br from-[#FFFFFF] to-[#FFFFFF]  text-red-600">
             <div className="flex items-center justify-between mb-2">
-              <Calendar className="w-8 h-8 opacity-80" />
+              <Calendar className="w-7 h-7  opacity-70 bg-red-100 border border-red-200 rounded-full p-1 " />
             </div>
-            <Typography.H2 className="text-white text-3xl mb-1">{data.satisfactionRate}%</Typography.H2>
-            <Typography.Body className="text-white/90 text-sm">{t("admin.reports.satisfaction")}</Typography.Body>
+            <Typography.H2 className="text-black text-3xl mb-1">{data.satisfactionRate}%</Typography.H2>
+            <Typography.Body className="text-black/90 text-sm">{t("admin.reports.satisfaction")}</Typography.Body>
           </Card>
         </div>
 

@@ -145,7 +145,7 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[260px] bg-[#0A0A0A] border-r border-white/5 h-screen sticky top-0 shadow-2xl z-50">
+      <aside className="hidden md:flex flex-col w-[260px] bg-[#F5F5F5F5] border-r border-white/5 h-screen sticky top-0 shadow-2xl z-50">
         {/* Logo */}
         <div className="px-6 pt-6 pb-4">
           <Link to="/donor/home" className="flex items-center gap-3">
@@ -153,7 +153,7 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
               <Droplet className="text-white w-5 h-5 fill-white" />
             </div>
             <div>
-              <span className="text-lg font-bold text-white leading-none block" style={{ fontFamily: "'DM Sans', sans-serif" }}>SangVie</span>
+              <span className="text-lg font-bold text-red-650 leading-none block" style={{ fontFamily: "'DM Sans', sans-serif" }}>SangVie</span>
               <span className="text-[10px] text-[#CC0000] font-semibold tracking-widest uppercase mt-0.5 block" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("donor.space")}</span>
             </div>
           </Link>
@@ -170,24 +170,24 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive
-                  ? "bg-[#1E1E1E] text-white"
-                  : "text-[#999999] hover:bg-[#1A1A1A] hover:text-white"
+                  ? "bg-[#CC0000] text-white"
+                  : "text-[#999999] hover:bg-secondary hover:text-black"
                   }`}
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 <div
                   className={`p-1.5 rounded-lg transition-colors ${isActive
                     ? "bg-[#CC0000] text-white"
-                    : "bg-[#1A1A1A] text-[#666666] group-hover:text-white"
+                    : " text-black group-hover:text-black"
                     }`}
                 >
                   <item.icon className="w-4 h-4" />
                 </div>
-                <span className={`text-sm font-medium ${isActive ? "font-semibold" : ""}`}>
+                <span className={`text-sm font-medium text-black ${isActive ? "text-white" : ""} ${isActive ? "font-semibold" : ""}`}>
                   {t(item.labelKey as any)}
                 </span>
                 {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#CC0000]" />
+                  <div className="ml-auto w-1.5 h-1.5  rounded-full bg-[#CC0000]" />
                 )}
               </Link>
             );
@@ -197,19 +197,19 @@ export function DonorLayout({ children }: { children: React.ReactNode }) {
         {/* User + Logout section */}
         <div className="px-4 mb-6 mt-auto pt-6 border-t border-white/10 relative z-20">
           {/* User info */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1A1A1A] border border-[#252525] mb-2">
+          <div className="flex items-center gap-3 p-3 rounded-xl border-t-[#252525] mb-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#CC0000] to-[#990000] flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg">
               {user?.nom?.split(" ")?.map((n: string) => n[0])?.join("")?.slice(0, 2) || "U"}
             </div>
             <div className="flex-1 truncate">
               <p
-                className="text-sm font-bold text-white truncate"
+                className="text-sm font-bold text-black truncate"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 {user?.nom || t("nav.user.default")}
               </p>
               <p
-                className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-0.5"
+                className="text-[10px] text-black/40 uppercase tracking-widest font-bold mt-0.5"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 {t("donor.active")}
